@@ -1,0 +1,8 @@
+crons:
+  - name: report-reminders
+    description: "Checks hourly and sends month-end, pre-deadline and overdue report reminders at the configured hour"
+    cron: "0 * * * *"
+    endpoint: "{{BASE_URL}}/api/cron/reminders"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true
