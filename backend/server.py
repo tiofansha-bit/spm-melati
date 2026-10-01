@@ -155,7 +155,7 @@ async def list_programs(user=Depends(get_current_user)):
 async def editable_program(pid, user):
     p = await get_program(pid)
     if not can_edit_program(user, p):
-        raise HTTPException(403, "Hanya admin atau PJ program ini yang dapat mengubah")
+        raise HTTPException(403, "Hanya admin atau PJ SPM ini yang dapat mengubah")
     return p
 
 
@@ -173,7 +173,7 @@ def clean_program(body: ProgramIn, user, current=None):
 async def create_program(body: ProgramIn, user=Depends(require("admin", "pj"))):
     doc = {"id": new_id(), **clean_program(body, user), "created_at": now_iso()}
     await db.programs.insert_one(doc)
-    await log_activity(user, "tambah program", "program", doc["id"], body.name)
+    await log_activity(user, "tambah SPM", "program", doc["id"], body.name)
     doc.pop("_id", None)
     return doc
 
@@ -182,7 +182,7 @@ async def create_program(body: ProgramIn, user=Depends(require("admin", "pj"))):
 async def update_program(pid: str, body: ProgramIn, user=Depends(get_current_user)):
     p = await editable_program(pid, user)
     await db.programs.update_one({"id": pid}, {"$set": {**clean_program(body, user, p), "updated_at": now_iso()}})
-    await log_activity(user, "ubah profil program", "program", pid, body.name)
+    await log_activity(user, "ubah profil SPM", "program", pid, body.name)
     return await get_program(pid)
 
 
@@ -191,14 +191,14 @@ async def delete_program(pid: str, user=Depends(get_current_user)):
     p = await editable_program(pid, user)
     await db.programs.delete_one({"id": pid})
     await db.indicators.delete_many({"program_id": pid})
-    await log_activity(user, "hapus program", "program", pid, p["name"])
+    await log_activity(user, "hapus SPM", "program", pid, p["name"])
     return {"ok": True}
 
 
 async def indicator_program(iid, user):
     ind = await db.indicators.find_one({"id": iid}, {"_id": 0})
     if not ind:
-        raise HTTPException(404, "Indikator tidak ditemukan")
+        raise HTTPException(404, "Program tidak ditemukan")
     await editable_program(ind["program_id"], user)
     return ind
 
@@ -208,7 +208,7 @@ async def add_indicator(pid: str, body: IndicatorIn, user=Depends(get_current_us
     await editable_program(pid, user)
     doc = {"id": new_id(), "program_id": pid, **body.model_dump(), "created_at": now_iso()}
     await db.indicators.insert_one(doc)
-    await log_activity(user, "tambah indikator", "indikator", doc["id"], body.name)
+    await log_activity(user, "tambah program", "indikator", doc["id"], body.name)
     doc.pop("_id", None)
     return doc
 
@@ -217,7 +217,7 @@ async def add_indicator(pid: str, body: IndicatorIn, user=Depends(get_current_us
 async def update_indicator(iid: str, body: IndicatorIn, user=Depends(get_current_user)):
     await indicator_program(iid, user)
     await db.indicators.update_one({"id": iid}, {"$set": body.model_dump()})
-    await log_activity(user, "ubah indikator", "indikator", iid, body.name)
+    await log_activity(user, "ubah program", "indikator", iid, body.name)
     return await db.indicators.find_one({"id": iid}, {"_id": 0})
 
 
@@ -225,18 +225,18 @@ async def update_indicator(iid: str, body: IndicatorIn, user=Depends(get_current
 async def delete_indicator(iid: str, user=Depends(get_current_user)):
     ind = await indicator_program(iid, user)
     await db.indicators.delete_one({"id": iid})
-    await log_activity(user, "hapus indikator", "indikator", iid, ind["name"])
+    await log_activity(user, "hapus program", "indikator", iid, ind["name"])
     return {"ok": True}
 
 
 # ---------- Dashboard ----------
 async def scope_programs(user, program_id=None):
-    """PJ: list of own program ids (403 if requesting another program); others: None."""
+    """PJ: list of own SPM ids (403 if requesting another SPM); others: None."""
     if user["role"] != "pj":
         return None
     own = [p["id"] async for p in db.programs.find({"pj_user_id": user["id"]}, {"id": 1, "_id": 0})]
     if program_id and program_id not in own:
-        raise HTTPException(403, "PJ hanya dapat melihat data programnya sendiri")
+        raise HTTPException(403, "PJ hanya dapat melihat data SPM-nya sendiri")
     return own
 
 
@@ -339,7 +339,7 @@ async def list_reports(year: Optional[int] = None, month: Optional[int] = None, 
 async def create_report(body: ReportCreate, user=Depends(get_current_user)):
     p = await get_program(body.program_id)
     if not can_edit_program(user, p):
-        raise HTTPException(403, "Hanya PJ program atau admin yang dapat membuat laporan")
+        raise HTTPException(403, "Hanya PJ SPM atau admin yang dapat membuat laporan")
     ex = await db.reports.find_one({"program_id": p["id"], "year": body.year, "month": body.month}, {"_id": 0})
     if ex:
         return ex
@@ -396,7 +396,7 @@ async def submit_report(rid: str, user=Depends(get_current_user)):
     if not can_edit_program(user, p) or r["status"] not in ("draf", "perlu_perbaikan"):
         raise HTTPException(400, "Laporan tidak dapat diajukan pada status ini")
     if not any(i.get("capaian") is not None for i in r.get("items", [])):
-        raise HTTPException(400, "Isi minimal satu capaian indikator sebelum mengajukan")
+        raise HTTPException(400, "Isi minimal satu capaian program sebelum mengajukan")
     upd = {"status": "diajukan", "submitted_at": now_iso(), "updated_at": now_iso()}
     await db.reports.update_one({"id": rid}, {"$set": upd})
     r.update(upd)
@@ -617,7 +617,7 @@ async def generate_analysis(body: AnalysisGen, user=Depends(get_current_user)):
             g, i = max(gaps, key=lambda x: x[0])
             masalah = f"Capaian {i['name']} {exports.fmt(i['recap']['persen'], True)} di bawah target periode {exports.fmt(i['recap']['target_periode'], True)}"
         else:
-            raise HTTPException(400, "Tidak ada indikator di bawah target. Tuliskan masalah yang ingin dianalisis.")
+            raise HTTPException(400, "Tidak ada program di bawah target. Tuliskan masalah yang ingin dianalisis.")
     try:
         prompt = (ai.SWOT_PROMPT.format(ctx=ctx) if body.type == "swot" else ai.FISH_PROMPT.format(masalah=masalah, ctx=ctx))
         content = await ai.ai_json(prompt)
@@ -628,7 +628,7 @@ async def generate_analysis(body: AnalysisGen, user=Depends(get_current_user)):
            "period": body.period, "month": body.month, "quarter": body.quarter, "periode": ds["periode"],
            "masalah": masalah, "content": content,
            "rujukan": ai.SWOT_REFS if body.type == "swot" else ai.FISH_REFS,
-           "sumber_data": f"Laporan bulanan program {p['name']} berstatus Diajukan/Perlu perbaikan/Disetujui, {ds['periode']}; daftar tindak lanjut program.",
+           "sumber_data": f"Laporan bulanan SPM {p['name']} berstatus Diajukan/Perlu perbaikan/Disetujui, {ds['periode']}; daftar tindak lanjut SPM.",
            "validations": [], "status": "menunggu_validasi", "created_by": user["name"], "created_at": now_iso(),
            "updated_at": now_iso()}
     await db.analyses.insert_one(doc)
@@ -678,7 +678,7 @@ async def validate_analysis(aid: str, body: ValidateIn, user=Depends(get_current
     p = await get_program(a["program_id"])
     role = "kepala" if user["role"] == "kepala" else ("pj" if p.get("pj_user_id") == user["id"] else None)
     if not role:
-        raise HTTPException(403, "Validasi hanya oleh PJ program dan Kepala Puskesmas")
+        raise HTTPException(403, "Validasi hanya oleh PJ SPM dan Kepala Puskesmas")
     vals = [v for v in a.get("validations", []) if v["role"] != role]
     vals.append({"role": role, "user_name": user["name"], "status": body.status, "note": body.note, "at": now_iso()})
     roles_ok = {v["role"] for v in vals if v["status"] == "valid"}
@@ -715,18 +715,18 @@ def _narr_bullets(p, key):
 async def generate_presentation(body: PresGen, user=Depends(get_current_user)):
     prog = await get_program(body.program_id)
     if user["role"] == "pj" and prog.get("pj_user_id") != user["id"]:
-        raise HTTPException(403, "PJ hanya dapat membuat presentasi untuk programnya sendiri")
+        raise HTTPException(403, "PJ hanya dapat membuat presentasi untuk SPM-nya sendiri")
     ds, ctx = await ai.context_for(body.program_id, body.year, body.period, body.month, body.quarter, db, body.include_draft)
     p = ds["programs"][0]
     inds = p["indicators"]
     has_draft = any(n["status"] == "draf" for n in p["narasi"])
     sid = new_id
     slides = [
-        {"id": sid(), "layout": "title", "title": f"Capaian Program {p['name']}",
+        {"id": sid(), "layout": "title", "title": f"Capaian SPM {p['name']}",
          "subtitle": f"{ds['periode']}  |  PJ: {p.get('pj_name') or '-'}  |  UPT Puskesmas Melati" + ("  |  Memuat data draf" if has_draft else ""),
-         "bullets": [], "notes": "Disusun dari data yang dientri PJ program pada laporan bulanan."},
-        {"id": sid(), "layout": "table", "title": "Capaian Indikator",
-         "table": {"headers": ["Indikator", "Sasaran", "Target (%)", "Capaian", "Capaian (%)", "Status"],
+         "bullets": [], "notes": "Disusun dari data yang dientri PJ SPM pada laporan bulanan."},
+        {"id": sid(), "layout": "table", "title": "Capaian Program",
+         "table": {"headers": ["Program", "Sasaran", "Target (%)", "Capaian", "Capaian (%)", "Status"],
                    "rows": [[r[0], r[3], r[4], r[5], r[6], r[7]] for r in map(exports.ind_row, inds)]}, "bullets": []},
         {"id": sid(), "layout": "chart", "title": "Grafik Capaian vs Target (%)",
          "chart": {"labels": [i["name"][:40] for i in inds],
@@ -925,9 +925,9 @@ async def run_reminders(force=False):
                 continue
             pj = users.get(p.get("pj_user_id"))
             per = f"{MONTHS[mm - 1]} {yy}"
-            msg = {"akhir_bulan": f"Hari ini akhir bulan. Mohon lengkapi laporan program {p['name']} periode {per}. Tenggat: {dlx.strftime('%d-%m-%Y')}.",
-                   "sebelum_tenggat": f"Tenggat laporan program {p['name']} periode {per} jatuh pada {dlx.strftime('%d-%m-%Y')} ({(dlx.date() - today).days} hari lagi).",
-                   "terlambat": f"Laporan program {p['name']} periode {per} melewati tenggat {dlx.strftime('%d-%m-%Y')} dan belum diajukan."}[stage]
+            msg = {"akhir_bulan": f"Hari ini akhir bulan. Mohon lengkapi laporan SPM {p['name']} periode {per}. Tenggat: {dlx.strftime('%d-%m-%Y')}.",
+                   "sebelum_tenggat": f"Tenggat laporan SPM {p['name']} periode {per} jatuh pada {dlx.strftime('%d-%m-%Y')} ({(dlx.date() - today).days} hari lagi).",
+                   "terlambat": f"Laporan SPM {p['name']} periode {per} melewati tenggat {dlx.strftime('%d-%m-%Y')} dan belum diajukan."}[stage]
             email_res = "Email dinonaktifkan"
             if pj:
                 await notify(pj["id"], f"Pengingat: {STAGE_TXT[stage]}", msg, "/laporan", "pengingat")
@@ -943,7 +943,7 @@ async def run_reminders(force=False):
             sent += 1
             results.append({"program": p["name"], "stage": stage, "email": email_res})
         if late_names:
-            await notify_role("kepala", "Laporan terlambat", f"{len(late_names)} program terlambat ({MONTHS[mm - 1]} {yy}): {', '.join(late_names)}",
+            await notify_role("kepala", "Laporan terlambat", f"{len(late_names)} SPM terlambat ({MONTHS[mm - 1]} {yy}): {', '.join(late_names)}",
                               "/dashboard", "pengingat")
     return {"sent": sent, "jobs": [j[0] for j in jobs], "results": results}
 

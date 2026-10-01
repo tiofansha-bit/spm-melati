@@ -26,7 +26,7 @@ const FuDialog = ({ data, onClose, programs, onSaved, canDelete }) => {
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{f.id ? "Perbarui tindak lanjut" : "Tindak lanjut baru"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          {!f.id && <Field label="Program"><ProgramSelect testid="fu-program-select" programs={programs} value={f.program_id} onChange={(v) => setF({ ...f, program_id: v })} /></Field>}
+          {!f.id && <Field label="SPM"><ProgramSelect testid="fu-program-select" programs={programs} value={f.program_id} onChange={(v) => setF({ ...f, program_id: v })} /></Field>}
           <Field label="Judul"><Input data-testid="fu-title-input" value={f.title || ""} onChange={(e) => setF({ ...f, title: e.target.value })} /></Field>
           <Field label="Uraian / arahan"><Textarea rows={3} value={f.description || ""} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-3">

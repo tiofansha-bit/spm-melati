@@ -94,9 +94,9 @@ export const useMyPrograms = () => {
 };
 
 export const ProgramSelect = ({ programs, value, onChange, allowAll, testid = "program-select" }) => (
-  <SimpleSelect testid={testid} className="w-full sm:w-64" value={value || (allowAll ? "all" : undefined)} placeholder="Pilih program"
+  <SimpleSelect testid={testid} className="w-full sm:w-64" value={value || (allowAll ? "all" : undefined)} placeholder="Pilih SPM"
     onChange={(v) => onChange(v === "all" ? "" : v)}
-    options={[...(allowAll ? [{ value: "all", label: "Semua program" }] : []), ...programs.map((p) => ({ value: p.id, label: p.name }))]} />
+    options={[...(allowAll ? [{ value: "all", label: "Semua SPM" }] : []), ...programs.map((p) => ({ value: p.id, label: p.name }))]} />
 );
 
 export const Empty = ({ children, testid = "empty-state" }) => (

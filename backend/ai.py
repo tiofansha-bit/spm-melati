@@ -9,11 +9,12 @@ from recap import build_dataset
 logger = logging.getLogger(__name__)
 AI_MODEL = ("gemini", "gemini-3-flash-preview")
 
-BASE_RULES = """Anda analis program kesehatan Puskesmas. Gunakan Bahasa Indonesia.
+BASE_RULES = """Anda analis SPM kesehatan Puskesmas. Gunakan Bahasa Indonesia.
+ISTILAH: "SPM" (Standar Pelayanan Minimal) adalah tingkat atas; "program" adalah butir/indikator di dalam SPM (pada DATA, kunci "program" = nama SPM dan kunci "indikator" = daftar program). Gunakan istilah SPM dan program ini di semua teks keluaran.
 ATURAN KETAT:
 - Gunakan HANYA data yang diberikan. Jangan mengarang angka, penyebab, kejadian, atau referensi ilmiah.
 - Setiap butir wajib memiliki "jenis": "fakta" (tertulis langsung di data) atau "dugaan" (inferensi yang perlu diverifikasi).
-- Setiap butir wajib mencantumkan "sumber" yang menunjuk bagian data (mis. "Laporan Maret 2026 - Kendala", "Rekap indikator X").
+- Setiap butir wajib mencantumkan "sumber" yang menunjuk bagian data (mis. "Laporan Maret 2026 - Kendala", "Rekap program X").
 - Data bernilai null berarti "Belum tersedia", bukan nol. Jangan menganggapnya nol.
 - Jika data tidak cukup, kosongkan daftar atau tulis dugaan dengan jelas, jangan mengisi dengan informasi umum yang tidak ada di data.
 - Keluarkan HANYA JSON valid tanpa teks lain."""
@@ -90,7 +91,7 @@ Format JSON:
 DATA:
 {ctx}"""
 
-PRES_PROMPT = """Tulis analisis singkat capaian program untuk slide presentasi (maks 5 butir) dari DATA berikut.
+PRES_PROMPT = """Tulis analisis singkat capaian SPM untuk slide presentasi (maks 5 butir) dari DATA berikut.
 Format JSON: {{"analisis":[{{"teks":"","jenis":"fakta|dugaan","sumber":""}}]}}
 DATA:
 {ctx}"""

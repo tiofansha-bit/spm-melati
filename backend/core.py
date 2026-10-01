@@ -18,7 +18,7 @@ WIB = timezone(timedelta(hours=7))
 MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
           "Agustus", "September", "Oktober", "November", "Desember"]
 STATUS_LABEL = {"draf": "Draf", "diajukan": "Diajukan", "perlu_perbaikan": "Perlu perbaikan", "disetujui": "Disetujui"}
-ROLE_LABEL = {"admin": "Admin", "pj": "PJ Program", "kepala": "Kepala Puskesmas"}
+ROLE_LABEL = {"admin": "Admin", "pj": "PJ SPM", "kepala": "Kepala Puskesmas"}
 
 
 def now():
@@ -96,7 +96,7 @@ async def notify_role(role, title, message, link="", kind="info"):
 async def get_program(pid):
     p = await db.programs.find_one({"id": pid}, NOID)
     if not p:
-        raise HTTPException(404, "Program tidak ditemukan")
+        raise HTTPException(404, "SPM tidak ditemukan")
     return p
 
 

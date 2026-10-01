@@ -10,13 +10,13 @@ import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, id: "dashboard" },
-  { to: "/laporan", label: "Laporan Program", icon: FileText, id: "laporan" },
+  { to: "/laporan", label: "Laporan SPM", icon: FileText, id: "laporan" },
   { to: "/tindak-lanjut", label: "Tindak Lanjut", icon: ListChecks, id: "tindak-lanjut" },
   { to: "/analisis", label: "SWOT & Fishbone", icon: Microscope, id: "analisis" },
   { to: "/presentasi", label: "Presentasi", icon: Presentation, id: "presentasi" },
   { to: "/tabel", label: "Tabel Fleksibel", icon: Table2, id: "tabel" },
   { to: "/ekspor", label: "Ekspor", icon: Download, id: "ekspor" },
-  { to: "/program", label: "Program & Indikator", icon: Layers, id: "program" },
+  { to: "/program", label: "SPM & Program", icon: Layers, id: "program" },
   { to: "/pengguna", label: "Pengguna", icon: Users, id: "pengguna", roles: ["admin"] },
   { to: "/pengingat", label: "Pengingat & Integrasi", icon: BellRing, id: "pengingat" },
   { to: "/aktivitas", label: "Riwayat Aktivitas", icon: History, id: "aktivitas", roles: ["admin", "kepala"] },
@@ -93,7 +93,7 @@ export default function Layout() {
           <div className="flex items-center gap-3">
             <button className="rounded-lg p-2 hover:bg-[#E6F0E8] lg:hidden" onClick={() => setOpen(true)} data-testid="mobile-menu-button"><Menu className="h-5 w-5" /></button>
             <img src="/logo-mark.png" alt="" className="h-8 w-8 lg:hidden" />
-            <span className="hidden text-sm text-slate-500 sm:inline">Pelaporan & Evaluasi Program</span>
+            <span className="hidden text-sm text-slate-500 sm:inline">Pelaporan & Evaluasi SPM</span>
           </div>
           <div className="flex items-center gap-2">
             <Notifications />

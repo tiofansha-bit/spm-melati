@@ -42,10 +42,10 @@ const ItemsTable = ({ report, items, setItems, editable }) => {
     <TooltipProvider>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
-          <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="py-2 pr-3">Indikator</th><th className="px-2">Metode</th><th className="px-2 w-28">Sasaran</th><th className="px-2 w-24">Target (%)</th><th className="px-2 w-28">Capaian</th><th className="px-2">%</th><th className="px-2">Keterangan</th></tr></thead>
+          <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="py-2 pr-3">Program</th><th className="px-2">Metode</th><th className="px-2 w-28">Sasaran</th><th className="px-2 w-24">Target (%)</th><th className="px-2 w-28">Capaian</th><th className="px-2">%</th><th className="px-2">Keterangan</th></tr></thead>
           <tbody>
             {items.map((it, k) => {
-              const ind = inds[it.indicator_id] || { name: "(indikator dihapus)" };
+              const ind = inds[it.indicator_id] || { name: "(program dihapus)" };
               const pct = it.capaian !== null && it.sasaran ? (it.capaian / it.sasaran) * 100 : null;
               return (
                 <tr key={it.indicator_id} className="border-t border-[#EEF3EF] align-top">

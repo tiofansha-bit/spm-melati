@@ -33,7 +33,7 @@ export default function Login() {
         <div className="relative rounded-2xl bg-white/95 px-6 py-4 shadow-xl w-fit"><img src="/logo.png" alt="MELATI Program Hub" className="h-16" /></div>
         <div className="relative max-w-lg animate-rise">
           <div className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-200">UPT Puskesmas Melati</div>
-          <h1 className="font-display text-5xl font-bold leading-[1.05]">Satu ruang untuk laporan, evaluasi, dan tindak lanjut program.</h1>
+          <h1 className="font-display text-5xl font-bold leading-[1.05]">Satu ruang untuk laporan, evaluasi, dan tindak lanjut SPM.</h1>
           <p className="mt-6 text-emerald-100/90">Capaian bulanan, rekap triwulan & tahunan, analisis SWOT dan fishbone berbasis data, hingga presentasi siap tayang.</p>
         </div>
         <div className="relative grid grid-cols-3 gap-4 text-sm">

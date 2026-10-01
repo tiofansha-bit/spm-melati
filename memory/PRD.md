@@ -13,7 +13,7 @@ Password login (JWT), AI = Gemini 3 Flash via Emergent LLM key, Resend email (Em
 
 ## Implemented (Oct 2026)
 - All 13 features above; iteration_1 testing: backend 41/41, frontend critical flows pass.
-- Iteration 2: presentations generated from PJ entries (incl. drafts, toggle) + "Buat presentasi" button in report editor; PJ can export own presentations/reports; PJ sees only own programs on dashboard/export/presentations; PJ manages own program profile (labels, custom profile fields), indicators, can add/delete own programs. Tests 22/22 pass.
+- Iteration 3: terminology renamed in UI, exports, slides, notifications & AI output: "Program" → "SPM (Standar Pelayanan Minimal)", "Indikator" → "Program". Data model unchanged (programs/indicators collections). generated from PJ entries (incl. drafts, toggle) + "Buat presentasi" button in report editor; PJ can export own presentations/reports; PJ sees only own programs on dashboard/export/presentations; PJ manages own program profile (labels, custom profile fields), indicators, can add/delete own programs. Tests 22/22 pass.
 
 ## Backlog
 - P1: attachments/evidence upload on reports, per-PJ email for real accounts (demo .test emails skipped)

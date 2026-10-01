@@ -21,16 +21,16 @@ const ProgramDialog = ({ data, onClose, users, onSaved, admin }) => {
     try {
       const body = { name: f.name, code: f.code || "", description: f.description || "", pj_user_id: f.pj_user_id || null, labels, profile: profile.filter((x) => x.label?.trim()) };
       if (f.id) await api.put(`/programs/${f.id}`, body); else await api.post("/programs", body);
-      toast.success("Profil program disimpan"); onSaved(); onClose();
+      toast.success("Profil SPM disimpan"); onSaved(); onClose();
     } catch (e) { toast.error(errMsg(e)); }
   };
   return (
     <Dialog open={!!data} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
-        <DialogHeader><DialogTitle>{f.id ? "Ubah profil program" : "Tambah program"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{f.id ? "Ubah profil SPM" : "Tambah SPM"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-[1fr_120px] gap-3">
-            <Field label="Nama program"><Input data-testid="program-name-input" value={f.name || ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+            <Field label="Nama SPM"><Input data-testid="program-name-input" value={f.name || ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
             <Field label="Kode"><Input data-testid="program-code-input" value={f.code || ""} onChange={(e) => setF({ ...f, code: e.target.value })} /></Field>
           </div>
           {admin && (
@@ -39,7 +39,7 @@ const ProgramDialog = ({ data, onClose, users, onSaved, admin }) => {
             </Field>
           )}
           <Field label="Deskripsi"><Textarea data-testid="program-description-input" value={f.description || ""} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
-          <Field label="Label program">
+          <Field label="Label SPM">
             <div className="flex flex-wrap gap-1.5">
               {labels.map((l) => (
                 <span key={l} className="inline-flex items-center gap-1 rounded-full bg-[#E6F0E8] px-2.5 py-0.5 text-xs font-medium text-[#1A4D3A]" data-testid={`program-label-chip-${l}`}>
@@ -52,7 +52,7 @@ const ProgramDialog = ({ data, onClose, users, onSaved, admin }) => {
               <Button type="button" variant="outline" className="btn-soft" data-testid="add-label-button" onClick={addLabel}>Tambah</Button>
             </div>
           </Field>
-          <Field label="Isian profil program" hint="Tambah butir sesuai kebutuhan, mis. Tujuan, Wilayah kerja, Sasaran utama, Mitra lintas sektor.">
+          <Field label="Isian profil SPM" hint="Tambah butir sesuai kebutuhan, mis. Tujuan, Wilayah kerja, Sasaran utama, Mitra lintas sektor.">
             <div className="space-y-2">
               {profile.map((x, i) => (
                 <div key={i} className="grid grid-cols-[140px_1fr_auto] gap-2">
@@ -79,15 +79,15 @@ const IndicatorDialog = ({ data, onClose, onSaved }) => {
     try {
       const body = { name: f.name, unit: f.unit || "", target: n(f.target), sasaran: n(f.sasaran), method: f.method || "kumulatif", definition: f.definition || "", order: f.order || 0 };
       if (f.id) await api.put(`/indicators/${f.id}`, body); else await api.post(`/programs/${f.program_id}/indicators`, body);
-      toast.success("Indikator disimpan"); onSaved(); onClose();
+      toast.success("Program disimpan"); onSaved(); onClose();
     } catch (e) { toast.error(errMsg(e)); }
   };
   return (
     <Dialog open={!!data} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>{f.id ? "Ubah indikator" : "Tambah indikator"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{f.id ? "Ubah program" : "Tambah program"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Field label="Nama indikator"><Input data-testid="indicator-name-input" value={f.name || ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+          <Field label="Nama program"><Input data-testid="indicator-name-input" value={f.name || ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Satuan"><Input data-testid="indicator-unit-input" value={f.unit || ""} onChange={(e) => setF({ ...f, unit: e.target.value })} /></Field>
             <Field label="Target (%)"><Input data-testid="indicator-target-input" type="number" value={f.target ?? ""} onChange={(e) => setF({ ...f, target: e.target.value })} /></Field>
@@ -118,10 +118,10 @@ export default function Programs() {
 
   return (
     <div>
-      <PageHeader eyebrow="Master data" title={user.role === "pj" ? "Profil Program Saya" : "Program & Indikator"} subtitle={user.role === "pj" ? "Isi, tambah, hapus, dan beri label profil serta indikator program yang Anda pegang." : "Kelola program, PJ, indikator, satuan, target, dan metode perhitungan. Target contoh dapat disesuaikan dengan ketentuan yang berlaku."}>
-        {["admin", "pj"].includes(user.role) && <Button className="btn-primary rounded-full" data-testid="add-program-button" onClick={() => setPd({})}><Plus className="mr-1 h-4 w-4" />Tambah program</Button>}
+      <PageHeader eyebrow="Master data" title={user.role === "pj" ? "Profil SPM Saya" : "SPM & Program"} subtitle={user.role === "pj" ? "Isi, tambah, hapus, dan beri label profil serta program SPM yang Anda pegang." : "Kelola SPM, PJ, program, satuan, target, dan metode perhitungan. Target contoh dapat disesuaikan dengan ketentuan yang berlaku."}>
+        {["admin", "pj"].includes(user.role) && <Button className="btn-primary rounded-full" data-testid="add-program-button" onClick={() => setPd({})}><Plus className="mr-1 h-4 w-4" />Tambah SPM</Button>}
       </PageHeader>
-      {programs.length === 0 && <Empty>Belum ada program.</Empty>}
+      {programs.length === 0 && <Empty>Belum ada SPM.</Empty>}
       <div className="stagger space-y-5">
         {programs.map((p) => (
           <Card key={p.id} className="p-0" data-testid={`program-card-${p.id}`}>
@@ -133,9 +133,9 @@ export default function Programs() {
               </div>
               {canEdit(p) && (
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="btn-soft" data-testid={`add-indicator-${p.id}`} onClick={() => setIdlg({ program_id: p.id, method: "kumulatif" })}><Plus className="mr-1 h-3.5 w-3.5" />Indikator</Button>
+                  <Button size="sm" variant="outline" className="btn-soft" data-testid={`add-indicator-${p.id}`} onClick={() => setIdlg({ program_id: p.id, method: "kumulatif" })}><Plus className="mr-1 h-3.5 w-3.5" />Program</Button>
                   <Button size="icon" variant="ghost" data-testid={`edit-program-${p.id}`} onClick={() => setPd(p)}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" data-testid={`delete-program-${p.id}`} onClick={() => del(`/programs/${p.id}`, `Hapus program ${p.name} beserta indikatornya?`)}><Trash2 className="h-4 w-4 text-rose-600" /></Button>
+                  <Button size="icon" variant="ghost" data-testid={`delete-program-${p.id}`} onClick={() => del(`/programs/${p.id}`, `Hapus SPM ${p.name} beserta programnya?`)}><Trash2 className="h-4 w-4 text-rose-600" /></Button>
                 </div>
               )}
             </div>
@@ -146,7 +146,7 @@ export default function Programs() {
             )}
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
-                <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="px-5 py-2">Indikator</th><th className="px-3">Satuan</th><th className="px-3">Target</th><th className="px-3">Metode</th>{canEdit(p) && <th />}</tr></thead>
+                <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="px-5 py-2">Program</th><th className="px-3">Satuan</th><th className="px-3">Target</th><th className="px-3">Metode</th>{canEdit(p) && <th />}</tr></thead>
                 <tbody>
                   {p.indicators.map((i) => (
                     <tr key={i.id} className="border-t border-[#EEF3EF]" data-testid={`indicator-row-${i.id}`}>
@@ -156,7 +156,7 @@ export default function Programs() {
                       <td className="px-3"><span className="rounded bg-[#EEF4EF] px-2 py-0.5 text-xs text-emerald-800">{METHODS[i.method]?.label}</span></td>
                       {canEdit(p) && <td className="whitespace-nowrap px-3 text-right">
                         <Button size="icon" variant="ghost" data-testid={`edit-indicator-${i.id}`} onClick={() => setIdlg(i)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" data-testid={`delete-indicator-${i.id}`} onClick={() => del(`/indicators/${i.id}`, `Hapus indikator ${i.name}?`)}><Trash2 className="h-4 w-4 text-rose-600" /></Button>
+                        <Button size="icon" variant="ghost" data-testid={`delete-indicator-${i.id}`} onClick={() => del(`/indicators/${i.id}`, `Hapus program ${i.name}?`)}><Trash2 className="h-4 w-4 text-rose-600" /></Button>
                       </td>}
                     </tr>
                   ))}

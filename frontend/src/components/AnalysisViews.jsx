@@ -159,7 +159,7 @@ export const ValidationPanel = ({ a, onDone }) => {
       <SimpleSelect testid="validation-status-select" value={f.status} onChange={(v) => setF({ ...f, status: v })} options={[{ value: "valid", label: "Valid" }, { value: "perlu_revisi", label: "Perlu revisi" }]} />
       <Textarea data-testid="validation-note-input" rows={2} placeholder="Catatan validasi" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
       <Button className="btn-primary w-full" data-testid="submit-validation-button" onClick={send}>Simpan validasi</Button>
-      <p className="text-[11px] text-slate-500">Validasi dilakukan oleh PJ program terkait dan Kepala Puskesmas.</p>
+      <p className="text-[11px] text-slate-500">Validasi dilakukan oleh PJ SPM terkait dan Kepala Puskesmas.</p>
     </Card>
   );
 };

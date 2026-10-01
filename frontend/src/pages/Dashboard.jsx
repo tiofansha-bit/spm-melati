@@ -27,7 +27,7 @@ const ProgramRecap = ({ p }) => (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[720px] text-sm">
         <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500">
-          <th className="px-5 py-3">Indikator</th><th className="px-3">Sasaran</th><th className="px-3">Target periode</th><th className="px-3">Capaian</th><th className="px-3 w-44">Persentase</th><th className="px-3">Status</th>
+          <th className="px-5 py-3">Program</th><th className="px-3">Sasaran</th><th className="px-3">Target periode</th><th className="px-3">Capaian</th><th className="px-3 w-44">Persentase</th><th className="px-3">Status</th>
         </tr></thead>
         <tbody>
           {p.indicators.map((i) => (
@@ -41,7 +41,7 @@ const ProgramRecap = ({ p }) => (
               <td className="px-3"><RecapBadge status={i.recap.status} /></td>
             </tr>
           ))}
-          {p.indicators.length === 0 && <tr><td colSpan={6} className="px-5 py-4 text-slate-500">Belum ada indikator.</td></tr>}
+          {p.indicators.length === 0 && <tr><td colSpan={6} className="px-5 py-4 text-slate-500">Belum ada program.</td></tr>}
         </tbody>
       </table>
     </div>
@@ -62,14 +62,14 @@ export default function Dashboard() {
   const lateRows = c?.rows.filter((r) => r.late || r.status === "belum_dibuat" || r.status === "draf") || [];
   return (
     <div>
-      <PageHeader eyebrow="Dashboard" title={d ? d.periode : "Dashboard"} subtitle="Rekap triwulan & tahunan dihitung dari laporan bulanan sesuai metode tiap indikator. Data yang belum dilaporkan tidak dihitung sebagai nol.">
+      <PageHeader eyebrow="Dashboard" title={d ? d.periode : "Dashboard"} subtitle="Rekap triwulan & tahunan dihitung dari laporan bulanan sesuai metode tiap program. Data yang belum dilaporkan tidak dihitung sebagai nol.">
         <ProgramSelect programs={programs} value={programId} onChange={setProgramId} allowAll />
         <PeriodFilter value={per} onChange={setPer} />
       </PageHeader>
       {!d ? <div className="text-sm text-slate-500">Memuat data…</div> : (
         <div className="space-y-8">
           <div className="stagger grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-            <Kpi testid="kpi-indicators" icon={Target} label="Indikator" value={d.summary.indikator} />
+            <Kpi testid="kpi-indicators" icon={Target} label="Program" value={d.summary.indikator} />
             <Kpi testid="kpi-achieved" icon={CheckCircle2} label="Tercapai" value={d.summary.tercapai} tone="text-emerald-600" />
             <Kpi testid="kpi-not-achieved" icon={AlertTriangle} label="Belum tercapai" value={d.summary.belum_tercapai} tone="text-rose-600" />
             <Kpi testid="kpi-unavailable" icon={CircleDashed} label="Belum tersedia" value={d.summary.belum_tersedia} tone="text-slate-500" />
@@ -80,7 +80,7 @@ export default function Dashboard() {
           <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
             <Card data-testid="trend-chart">
               <div className="mb-1 font-display text-lg font-semibold text-[#12372A]">Tren capaian bulanan {per.year}</div>
-              <div className="mb-4 text-xs text-slate-500">Rata-rata persentase capaian indikator per bulan. Titik kosong = belum tersedia.</div>
+              <div className="mb-4 text-xs text-slate-500">Rata-rata persentase capaian program per bulan. Titik kosong = belum tersedia.</div>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={d.trend} margin={{ left: -10, right: 10 }}>
@@ -111,7 +111,7 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-5">
-            <h2 className="font-display text-xl font-semibold text-[#12372A]">Rekap per program</h2>
+            <h2 className="font-display text-xl font-semibold text-[#12372A]">Rekap per SPM</h2>
             {d.programs.map((p) => <ProgramRecap key={p.id} p={p} />)}
           </div>
         </div>

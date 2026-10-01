@@ -6,10 +6,10 @@ DEMO_PASSWORD_KEPALA = "Kepala@2026"
 
 USERS = [
     ("kepala@puskesmas-melati.test", "Kepala Puskesmas Melati", "kepala", DEMO_PASSWORD_KEPALA),
-    ("pj.kia@puskesmas-melati.test", "PJ Program KIA", "pj", DEMO_PASSWORD_PJ),
-    ("pj.gizi@puskesmas-melati.test", "PJ Program Gizi", "pj", DEMO_PASSWORD_PJ),
-    ("pj.imunisasi@puskesmas-melati.test", "PJ Program Imunisasi", "pj", DEMO_PASSWORD_PJ),
-    ("pj.tb@puskesmas-melati.test", "PJ Program P2P TB", "pj", DEMO_PASSWORD_PJ),
+    ("pj.kia@puskesmas-melati.test", "PJ SPM KIA", "pj", DEMO_PASSWORD_PJ),
+    ("pj.gizi@puskesmas-melati.test", "PJ SPM Gizi", "pj", DEMO_PASSWORD_PJ),
+    ("pj.imunisasi@puskesmas-melati.test", "PJ SPM Imunisasi", "pj", DEMO_PASSWORD_PJ),
+    ("pj.tb@puskesmas-melati.test", "PJ SPM P2P TB", "pj", DEMO_PASSWORD_PJ),
 ]
 
 PROGRAMS = [

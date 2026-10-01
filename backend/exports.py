@@ -26,7 +26,7 @@ STATUS_TXT = {"tercapai": "Tercapai", "belum_tercapai": "Belum tercapai", "belum
               "sasaran_kosong": "Sasaran belum diisi", "target_kosong": "Target belum ditetapkan"}
 METHOD_TXT = {"kumulatif": "Kumulatif", "rasio": "Rasio periode", "terakhir": "Nilai terakhir"}
 REPORT_STATUS = {"draf": "Draf", "diajukan": "Diajukan", "perlu_perbaikan": "Perlu perbaikan", "disetujui": "Disetujui"}
-HEAD = ["Indikator", "Satuan", "Metode", "Sasaran", "Target periode (%)", "Capaian", "Capaian (%)", "Status"]
+HEAD = ["Program", "Satuan", "Metode", "Sasaran", "Target periode (%)", "Capaian", "Capaian (%)", "Status"]
 NARR = [("kendala", "Kendala"), ("upaya", "Upaya yang sudah dilakukan"), ("hasil_upaya", "Hasil upaya"),
         ("rtl", "Rencana tindak lanjut"), ("dukungan", "Dukungan yang dibutuhkan")]
 
@@ -46,7 +46,7 @@ def ind_row(i):
 
 
 def title_of(ds):
-    return "Laporan Kolektif Program" if len(ds["programs"]) > 1 else f"Laporan Program {ds['programs'][0]['name'] if ds['programs'] else ''}"
+    return "Laporan Kolektif SPM" if len(ds["programs"]) > 1 else f"Laporan SPM {ds['programs'][0]['name'] if ds['programs'] else ''}"
 
 
 def report_docx(ds):
@@ -69,7 +69,7 @@ def report_docx(ds):
             for c, txt in zip(t.add_row().cells, ind_row(i)):
                 c.text = txt
         if not p["indicators"]:
-            d.add_paragraph("Indikator belum ditetapkan.")
+            d.add_paragraph("Program belum ditetapkan.")
         d.add_heading("Narasi laporan", 2)
         if not p["narasi"]:
             d.add_paragraph(f"{NA} - belum ada laporan yang diajukan pada periode ini.")
@@ -80,7 +80,7 @@ def report_docx(ds):
                 para.add_run(f"{lbl}: ").bold = True
                 para.add_run(n.get(k) or NA)
     d.add_paragraph().add_run("Catatan: nilai 'Belum tersedia' berarti data belum dilaporkan, bukan nol. "
-                              "Rekap triwulan/tahunan dihitung dari laporan bulanan sesuai metode tiap indikator.").italic = True
+                              "Rekap triwulan/tahunan dihitung dari laporan bulanan sesuai metode tiap program.").italic = True
     buf = io.BytesIO()
     d.save(buf)
     return buf.getvalue()
@@ -94,7 +94,7 @@ def report_xlsx(ds):
     ws.append([title_of(ds)])
     ws.append([f"UPT Puskesmas Melati - Periode: {ds['periode']}"])
     ws.append([])
-    ws.append(["Program", "PJ"] + HEAD)
+    ws.append(["SPM", "PJ"] + HEAD)
     for c in ws[4]:
         c.font, c.fill = Font(bold=True, color="FFFFFF"), fill
     for p in ds["programs"]:
@@ -103,7 +103,7 @@ def report_xlsx(ds):
     for idx, w in enumerate([22, 18, 40, 12, 14, 12, 14, 12, 12, 20], 1):
         ws.column_dimensions[get_column_letter(idx)].width = w
     ws2 = wb.create_sheet("Narasi")
-    ws2.append(["Program", "Bulan", "Status"] + [l for _, l in NARR])
+    ws2.append(["SPM", "Bulan", "Status"] + [l for _, l in NARR])
     for c in ws2[1]:
         c.font, c.fill = Font(bold=True, color="FFFFFF"), fill
     for p in ds["programs"]:

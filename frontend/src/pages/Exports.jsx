@@ -26,12 +26,12 @@ export default function Exports() {
 
   return (
     <div>
-      <PageHeader eyebrow="Ekspor" title="Ekspor Laporan & Presentasi" subtitle="Unduh laporan satu program atau kolektif ke Word, Excel, dan PDF; presentasi ke PowerPoint yang dapat diedit dan PDF." />
+      <PageHeader eyebrow="Ekspor" title="Ekspor Laporan & Presentasi" subtitle="Unduh laporan satu SPM atau kolektif ke Word, Excel, dan PDF; presentasi ke PowerPoint yang dapat diedit dan PDF." />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <Card className="space-y-5" data-testid="export-report-card">
-          <div className="font-display text-lg font-semibold text-[#12372A]">Laporan program</div>
+          <div className="font-display text-lg font-semibold text-[#12372A]">Laporan SPM</div>
           <Field label="Cakupan"><ProgramSelect programs={programs} value={programId} onChange={setProgramId} allowAll testid="export-program-select" /></Field>
-          <p className="-mt-3 text-xs text-slate-500">“Semua program” menghasilkan laporan kolektif.</p>
+          <p className="-mt-3 text-xs text-slate-500">“Semua SPM” menghasilkan laporan kolektif.</p>
           <Field label="Periode"><PeriodFilter value={per} onChange={setPer} /></Field>
           <div className="grid grid-cols-3 gap-3">
             {FORMATS.map(({ f, label, icon: Icon }) => (

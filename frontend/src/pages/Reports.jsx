@@ -15,7 +15,7 @@ const NewReportDialog = ({ open, onOpenChange, programs }) => {
   const cp = currentPeriod();
   const [f, setF] = useState({ program_id: "", year: cp.year, month: cp.month });
   const create = async () => {
-    if (!f.program_id) return toast.error("Pilih program");
+    if (!f.program_id) return toast.error("Pilih SPM");
     try { const { data } = await api.post("/reports", f); nav(`/laporan/${data.id}`); } catch (e) { toast.error(errMsg(e)); }
   };
   return (
@@ -23,12 +23,12 @@ const NewReportDialog = ({ open, onOpenChange, programs }) => {
       <DialogContent>
         <DialogHeader><DialogTitle>Buat laporan bulanan</DialogTitle></DialogHeader>
         <div className="space-y-4">
-          <Field label="Program"><ProgramSelect testid="new-report-program-select" programs={programs} value={f.program_id} onChange={(v) => setF({ ...f, program_id: v })} /></Field>
+          <Field label="SPM"><ProgramSelect testid="new-report-program-select" programs={programs} value={f.program_id} onChange={(v) => setF({ ...f, program_id: v })} /></Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Bulan"><SimpleSelect testid="new-report-month-select" value={f.month} onChange={(v) => setF({ ...f, month: Number(v) })} options={MONTHS.map((m, i) => ({ value: i + 1, label: m }))} /></Field>
             <Field label="Tahun"><SimpleSelect testid="new-report-year-select" value={f.year} onChange={(v) => setF({ ...f, year: Number(v) })} options={YEARS} /></Field>
           </div>
-          <p className="text-xs text-slate-500">Jika laporan untuk program & bulan tersebut sudah ada, laporan itu yang akan dibuka.</p>
+          <p className="text-xs text-slate-500">Jika laporan untuk SPM & bulan tersebut sudah ada, laporan itu yang akan dibuka.</p>
         </div>
         <DialogFooter><Button className="btn-primary" data-testid="new-report-submit" onClick={create}>Buat & buka</Button></DialogFooter>
       </DialogContent>
@@ -51,7 +51,7 @@ export default function Reports() {
 
   return (
     <div>
-      <PageHeader eyebrow="Pelaporan" title="Laporan Program" subtitle="Isi sasaran, target, capaian, kendala, upaya, hasil upaya, rencana tindak lanjut, dan dukungan yang dibutuhkan setiap bulan.">
+      <PageHeader eyebrow="Pelaporan" title="Laporan SPM" subtitle="Isi sasaran, target, capaian, kendala, upaya, hasil upaya, rencana tindak lanjut, dan dukungan yang dibutuhkan setiap bulan.">
         {myPrograms.length > 0 && <Button data-testid="create-report-button" className="btn-primary rounded-full" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" />Buat laporan</Button>}
       </PageHeader>
       <div className="mb-5 flex flex-wrap gap-2">
@@ -63,7 +63,7 @@ export default function Reports() {
       {rows.length === 0 ? <Empty>Belum ada laporan untuk filter ini.</Empty> : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full min-w-[640px] text-sm">
-            <thead><tr className="bg-[#F3F7F2] text-left text-xs uppercase tracking-wider text-slate-500"><th className="px-5 py-3">Program</th><th className="px-3">Periode</th><th className="px-3">Status</th><th className="px-3">Diajukan</th><th className="px-3">Diperbarui</th></tr></thead>
+            <thead><tr className="bg-[#F3F7F2] text-left text-xs uppercase tracking-wider text-slate-500"><th className="px-5 py-3">SPM</th><th className="px-3">Periode</th><th className="px-3">Status</th><th className="px-3">Diajukan</th><th className="px-3">Diperbarui</th></tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} onClick={() => nav(`/laporan/${r.id}`)} data-testid={`report-row-${r.id}`} className="cursor-pointer border-t border-[#EEF3EF] transition-colors hover:bg-[#F7FAF7]">
