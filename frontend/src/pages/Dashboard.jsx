@@ -102,7 +102,7 @@ export default function Dashboard() {
                     <XAxis dataKey="bulan" tickLine={false} axisLine={false} />
                     <YAxis tickLine={false} axisLine={false} unit="%" />
                     <Tooltip formatter={(v) => (v === null ? "Belum tersedia" : `${v}%`)} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    {d.programs.length <= 6 && <Legend wrapperStyle={{ fontSize: 12 }} />}
                     {d.programs.map((p, i) => <Line key={p.id} type="monotone" dataKey={p.name} stroke={COLORS[i % COLORS.length]} strokeWidth={2.2} dot={{ r: 3 }} connectNulls={false} />)}
                   </LineChart>
                 </ResponsiveContainer>
