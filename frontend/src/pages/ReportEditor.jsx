@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Send, Cloud } from "lucide-react";
+import { ArrowLeft, Save, Send, Cloud, Presentation as PresIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,6 +78,7 @@ export default function ReportEditor() {
   const [items, setItems] = useState([]);
   const [narr, setNarr] = useState({});
   const [saved, setSaved] = useState(null);
+  const [making, setMaking] = useState(false);
   const dirty = useRef(false);
 
   const load = useCallback(() => api.get(`/reports/${id}`).then(({ data }) => {
@@ -104,6 +105,15 @@ export default function ReportEditor() {
   };
 
   if (!r) return <div className="text-sm text-slate-500">Memuat laporan…</div>;
+  const makePres = async () => {
+    setMaking(true);
+    try {
+      if (r.can_edit) await api.put(`/reports/${id}`, payload({ autosave: true }));
+      const { data } = await api.post("/presentations/generate", { program_id: r.program_id, year: r.year, period: "bulanan", month: r.month, include_draft: true });
+      toast.success("Presentasi dibuat dari isian laporan ini");
+      nav(`/presentasi/${data.id}`);
+    } catch (e) { toast.error(errMsg(e)); } finally { setMaking(false); }
+  };
   const editable = r.can_edit;
   return (
     <div className="space-y-6">
@@ -114,7 +124,12 @@ export default function ReportEditor() {
           <h1 className="font-display text-3xl font-bold text-[#12372A] sm:text-4xl" data-testid="report-title">{r.program.name} · {MONTHS[r.month - 1]} {r.year}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600"><StatusBadge status={r.status} /><span>PJ: {r.program.pj_name || "-"}</span><span>Tenggat: {fmtDate(r.deadline)}</span></div>
         </div>
-        <Stepper status={r.status} />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" className="btn-soft" data-testid="report-make-presentation-button" disabled={making} onClick={makePres}>
+            <PresIcon className="mr-1 h-4 w-4" />{making ? "Menyusun…" : "Buat presentasi"}
+          </Button>
+          <Stepper status={r.status} />
+        </div>
       </div>
       {r.status === "perlu_perbaikan" && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" data-testid="revision-request-note">

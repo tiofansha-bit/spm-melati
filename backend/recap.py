@@ -105,10 +105,10 @@ async def programs_with_indicators(program_id=None):
     return progs
 
 
-async def build_dataset(year, period, month=None, quarter=None, program_id=None):
+async def build_dataset(year, period, month=None, quarter=None, program_id=None, include_draft=False):
     months = period_months(period, month, quarter)
     progs = await programs_with_indicators(program_id)
-    reports = await load_reports(year, [p["id"] for p in progs], REPORTED)
+    reports = await load_reports(year, [p["id"] for p in progs], REPORTED + (["draf"] if include_draft else []))
     for p in progs:
         for ind in p["indicators"]:
             ind["recap"] = aggregate(ind, by_month_for(p["id"], ind["id"], reports), months)

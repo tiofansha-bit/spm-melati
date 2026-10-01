@@ -133,6 +133,8 @@ class ProgramIn(BaseModel):
     code: str = ""
     description: str = ""
     pj_user_id: Optional[str] = None
+    labels: List[str] = []
+    profile: List[dict] = []
 
 
 class IndicatorIn(BaseModel):
@@ -150,9 +152,26 @@ async def list_programs(user=Depends(get_current_user)):
     return await programs_with_indicators()
 
 
+async def editable_program(pid, user):
+    p = await get_program(pid)
+    if not can_edit_program(user, p):
+        raise HTTPException(403, "Hanya admin atau PJ program ini yang dapat mengubah")
+    return p
+
+
+def clean_program(body: ProgramIn, user, current=None):
+    d = body.model_dump()
+    d["labels"] = sorted({x.strip() for x in d["labels"] if x and x.strip()})
+    d["profile"] = [{"label": str(x.get("label", "")).strip(), "value": str(x.get("value", ""))}
+                    for x in d["profile"] if str(x.get("label", "")).strip()]
+    if user["role"] == "pj":
+        d["pj_user_id"] = current.get("pj_user_id") if current else user["id"]
+    return d
+
+
 @api.post("/programs")
-async def create_program(body: ProgramIn, user=Depends(require("admin"))):
-    doc = {"id": new_id(), **body.model_dump(), "created_at": now_iso()}
+async def create_program(body: ProgramIn, user=Depends(require("admin", "pj"))):
+    doc = {"id": new_id(), **clean_program(body, user), "created_at": now_iso()}
     await db.programs.insert_one(doc)
     await log_activity(user, "tambah program", "program", doc["id"], body.name)
     doc.pop("_id", None)
@@ -160,24 +179,33 @@ async def create_program(body: ProgramIn, user=Depends(require("admin"))):
 
 
 @api.put("/programs/{pid}")
-async def update_program(pid: str, body: ProgramIn, user=Depends(require("admin"))):
-    await db.programs.update_one({"id": pid}, {"$set": body.model_dump()})
-    await log_activity(user, "ubah program", "program", pid, body.name)
+async def update_program(pid: str, body: ProgramIn, user=Depends(get_current_user)):
+    p = await editable_program(pid, user)
+    await db.programs.update_one({"id": pid}, {"$set": {**clean_program(body, user, p), "updated_at": now_iso()}})
+    await log_activity(user, "ubah profil program", "program", pid, body.name)
     return await get_program(pid)
 
 
 @api.delete("/programs/{pid}")
-async def delete_program(pid: str, user=Depends(require("admin"))):
-    p = await get_program(pid)
+async def delete_program(pid: str, user=Depends(get_current_user)):
+    p = await editable_program(pid, user)
     await db.programs.delete_one({"id": pid})
     await db.indicators.delete_many({"program_id": pid})
     await log_activity(user, "hapus program", "program", pid, p["name"])
     return {"ok": True}
 
 
+async def indicator_program(iid, user):
+    ind = await db.indicators.find_one({"id": iid}, {"_id": 0})
+    if not ind:
+        raise HTTPException(404, "Indikator tidak ditemukan")
+    await editable_program(ind["program_id"], user)
+    return ind
+
+
 @api.post("/programs/{pid}/indicators")
-async def add_indicator(pid: str, body: IndicatorIn, user=Depends(require("admin"))):
-    await get_program(pid)
+async def add_indicator(pid: str, body: IndicatorIn, user=Depends(get_current_user)):
+    await editable_program(pid, user)
     doc = {"id": new_id(), "program_id": pid, **body.model_dump(), "created_at": now_iso()}
     await db.indicators.insert_one(doc)
     await log_activity(user, "tambah indikator", "indikator", doc["id"], body.name)
@@ -186,26 +214,41 @@ async def add_indicator(pid: str, body: IndicatorIn, user=Depends(require("admin
 
 
 @api.put("/indicators/{iid}")
-async def update_indicator(iid: str, body: IndicatorIn, user=Depends(require("admin"))):
+async def update_indicator(iid: str, body: IndicatorIn, user=Depends(get_current_user)):
+    await indicator_program(iid, user)
     await db.indicators.update_one({"id": iid}, {"$set": body.model_dump()})
     await log_activity(user, "ubah indikator", "indikator", iid, body.name)
     return await db.indicators.find_one({"id": iid}, {"_id": 0})
 
 
 @api.delete("/indicators/{iid}")
-async def delete_indicator(iid: str, user=Depends(require("admin"))):
+async def delete_indicator(iid: str, user=Depends(get_current_user)):
+    ind = await indicator_program(iid, user)
     await db.indicators.delete_one({"id": iid})
-    await log_activity(user, "hapus indikator", "indikator", iid)
+    await log_activity(user, "hapus indikator", "indikator", iid, ind["name"])
     return {"ok": True}
 
 
 # ---------- Dashboard ----------
+async def scope_programs(user, program_id=None):
+    """PJ: list of own program ids (403 if requesting another program); others: None."""
+    if user["role"] != "pj":
+        return None
+    own = [p["id"] async for p in db.programs.find({"pj_user_id": user["id"]}, {"id": 1, "_id": 0})]
+    if program_id and program_id not in own:
+        raise HTTPException(403, "PJ hanya dapat melihat data programnya sendiri")
+    return own
+
+
 @api.get("/dashboard")
 async def dashboard(year: int, period: str = "bulanan", month: int = 1, quarter: int = 1,
                     program_id: Optional[str] = None, user=Depends(get_current_user)):
+    own = await scope_programs(user, program_id)
     ds = await build_dataset(year, period, month, quarter, program_id)
+    if own is not None:
+        ds["programs"] = [p for p in ds["programs"] if p["id"] in own]
     settings = await get_settings()
-    comp = await completeness(year, ds["months"], settings, [program_id] if program_id else None)
+    comp = await completeness(year, ds["months"], settings, [program_id] if program_id else own)
     inds = [i for p in ds["programs"] for i in p["indicators"]]
     st = [i["recap"]["status"] for i in inds]
     pers = [i["recap"]["persen"] for i in inds if i["recap"]["persen"] is not None]
@@ -660,6 +703,7 @@ class PresGen(BaseModel):
     period: str = "bulanan"
     month: int = 1
     quarter: int = 1
+    include_draft: bool = True
 
 
 def _narr_bullets(p, key):
@@ -670,13 +714,17 @@ def _narr_bullets(p, key):
 @api.post("/presentations/generate")
 async def generate_presentation(body: PresGen, user=Depends(get_current_user)):
     prog = await get_program(body.program_id)
-    ds, ctx = await ai.context_for(body.program_id, body.year, body.period, body.month, body.quarter, db)
+    if user["role"] == "pj" and prog.get("pj_user_id") != user["id"]:
+        raise HTTPException(403, "PJ hanya dapat membuat presentasi untuk programnya sendiri")
+    ds, ctx = await ai.context_for(body.program_id, body.year, body.period, body.month, body.quarter, db, body.include_draft)
     p = ds["programs"][0]
     inds = p["indicators"]
+    has_draft = any(n["status"] == "draf" for n in p["narasi"])
     sid = new_id
     slides = [
         {"id": sid(), "layout": "title", "title": f"Capaian Program {p['name']}",
-         "subtitle": f"{ds['periode']}  |  PJ: {p.get('pj_name') or '-'}  |  UPT Puskesmas Melati", "bullets": []},
+         "subtitle": f"{ds['periode']}  |  PJ: {p.get('pj_name') or '-'}  |  UPT Puskesmas Melati" + ("  |  Memuat data draf" if has_draft else ""),
+         "bullets": [], "notes": "Disusun dari data yang dientri PJ program pada laporan bulanan."},
         {"id": sid(), "layout": "table", "title": "Capaian Indikator",
          "table": {"headers": ["Indikator", "Sasaran", "Target (%)", "Capaian", "Capaian (%)", "Status"],
                    "rows": [[r[0], r[3], r[4], r[5], r[6], r[7]] for r in map(exports.ind_row, inds)]}, "bullets": []},
@@ -718,7 +766,10 @@ async def generate_presentation(body: PresGen, user=Depends(get_current_user)):
 
 @api.get("/presentations")
 async def list_presentations(user=Depends(get_current_user)):
-    return await db.presentations.find({}, {"_id": 0, "slides": 0}).sort("created_at", -1).to_list(200)
+    q = {}
+    if user["role"] == "pj":
+        q["program_id"] = {"$in": [p["id"] async for p in db.programs.find({"pj_user_id": user["id"]}, {"id": 1, "_id": 0})]}
+    return await db.presentations.find(q, {"_id": 0, "slides": 0}).sort("created_at", -1).to_list(200)
 
 
 @api.get("/presentations/{pid}")
@@ -764,7 +815,10 @@ async def export_report(format: str, year: int, period: str = "bulanan", month: 
                         program_id: Optional[str] = None, user=Depends(get_current_user)):
     if format not in ("docx", "xlsx", "pdf"):
         raise HTTPException(400, "Format tidak didukung")
+    own = await scope_programs(user, program_id)
     ds = await build_dataset(year, period, month, quarter, program_id or None)
+    if own is not None:
+        ds["programs"] = [p for p in ds["programs"] if p["id"] in own]
     data = {"docx": exports.report_docx, "xlsx": exports.report_xlsx, "pdf": exports.report_pdf}[format](ds)
     await log_activity(user, f"ekspor laporan {format}", "ekspor", None, ds["periode"])
     name = f"Laporan_{'Kolektif' if not program_id else ds['programs'][0]['name']}_{ds['periode']}".replace(" ", "_")

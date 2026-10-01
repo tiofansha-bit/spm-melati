@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Target, CheckCircle2, AlertTriangle, CircleDashed, Gauge, ClipboardCheck, Clock } from "lucide-react";
 import { api, currentPeriod, fmtDate } from "@/lib/api";
-import { PageHeader, PeriodFilter, ProgramSelect, usePrograms, Card, Num, NA, RecapBadge, StatusBadge, Empty } from "@/components/common";
+import { PageHeader, PeriodFilter, ProgramSelect, useMyPrograms, Card, Num, NA, RecapBadge, StatusBadge, Empty } from "@/components/common";
 import { Progress } from "@/components/ui/progress";
 
 const COLORS = ["#1A4D3A", "#10B981", "#D97706", "#0E7490", "#9F1239", "#4D7C0F", "#7C2D12"];
@@ -51,7 +51,7 @@ const ProgramRecap = ({ p }) => (
 export default function Dashboard() {
   const [per, setPer] = useState(currentPeriod());
   const [programId, setProgramId] = useState("");
-  const [programs] = usePrograms();
+  const programs = useMyPrograms();
   const [d, setD] = useState(null);
 
   useEffect(() => {

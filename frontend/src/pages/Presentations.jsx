@@ -4,12 +4,12 @@ import { toast } from "sonner";
 import { Plus, Presentation as PIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, errMsg, fmtDate, download } from "@/lib/api";
-import { PageHeader, Card, Empty, usePrograms } from "@/components/common";
+import { PageHeader, Card, Empty, useMyPrograms } from "@/components/common";
 import { GenerateDialog } from "@/components/GenerateDialog";
 
 export default function Presentations() {
   const nav = useNavigate();
-  const [programs] = usePrograms();
+  const programs = useMyPrograms();
   const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
   const load = () => api.get("/presentations").then((r) => setRows(r.data));
@@ -45,7 +45,7 @@ export default function Presentations() {
           ))}
         </div>
       )}
-      <GenerateDialog open={open} onOpenChange={setOpen} programs={programs} title="Buat presentasi otomatis" description="Slide disusun dari laporan bulanan yang telah diajukan pada periode terpilih. Analisis ditandai sebagai fakta atau dugaan." onGenerate={gen} />
+      <GenerateDialog open={open} onOpenChange={setOpen} programs={programs} title="Buat presentasi otomatis" description="Slide disusun otomatis dari data yang dientri PJ program pada laporan bulanan (sasaran, target, capaian, kendala, upaya, hasil, RTL, dukungan). Analisis ditandai fakta atau dugaan." withDraft onGenerate={gen} />
     </div>
   );
 }

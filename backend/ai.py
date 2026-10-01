@@ -96,7 +96,7 @@ DATA:
 {ctx}"""
 
 
-async def context_for(program_id, year, period, month, quarter, db):
-    ds = await build_dataset(year, period, month, quarter, program_id)
+async def context_for(program_id, year, period, month, quarter, db, include_draft=False):
+    ds = await build_dataset(year, period, month, quarter, program_id, include_draft)
     fus = await db.followups.find({"program_id": program_id}, {"_id": 0}).to_list(100) if program_id else []
     return ds, compact_context(ds, fus)

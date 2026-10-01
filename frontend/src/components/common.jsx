@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MONTHS, QUARTERS, STATUS, RECAP, FU_STATUS, fmtNum, api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export const NA = ({ testid = "unreported-data-placeholder" }) => (
   <span data-testid={testid} className="na-badge">Belum tersedia</span>
@@ -84,6 +85,12 @@ export const usePrograms = () => {
   const reload = () => api.get("/programs").then((r) => setPrograms(r.data));
   useEffect(() => { reload(); }, []);
   return [programs, reload];
+};
+
+export const useMyPrograms = () => {
+  const { user } = useAuth();
+  const [programs] = usePrograms();
+  return user.role === "pj" ? programs.filter((p) => p.pj_user_id === user.id) : programs;
 };
 
 export const ProgramSelect = ({ programs, value, onChange, allowAll, testid = "program-select" }) => (

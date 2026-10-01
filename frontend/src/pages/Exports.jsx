@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { FileText, FileSpreadsheet, FileDown, Presentation as PIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, errMsg, download, currentPeriod } from "@/lib/api";
-import { PageHeader, Card, PeriodFilter, ProgramSelect, usePrograms, Empty, Field } from "@/components/common";
+import { PageHeader, Card, PeriodFilter, ProgramSelect, useMyPrograms, Empty, Field } from "@/components/common";
 
 const FORMATS = [
   { f: "docx", label: "Word", icon: FileText },
@@ -12,7 +12,7 @@ const FORMATS = [
 ];
 
 export default function Exports() {
-  const [programs] = usePrograms();
+  const programs = useMyPrograms();
   const [per, setPer] = useState(currentPeriod());
   const [programId, setProgramId] = useState("");
   const [busy, setBusy] = useState("");
