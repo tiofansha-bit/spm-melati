@@ -252,20 +252,50 @@ async def dashboard(year: int, period: str = "bulanan", month: int = 1, quarter:
     inds = [i for p in ds["programs"] for i in p["indicators"]]
     st = [i["recap"]["status"] for i in inds]
     pers = [i["recap"]["persen"] for i in inds if i["recap"]["persen"] is not None]
-    reports = await load_reports(year, [p["id"] for p in ds["programs"]], REPORTED)
-    trend = []
+    pids = [p["id"] for p in ds["programs"]]
+    reports = await load_reports(year, pids, REPORTED)
+    prev_reports = await load_reports(year - 1, pids, REPORTED)
+    all_reports = await load_reports(year, pids)
+    prev_months = ds["months"]
+
+    def avg(vals):
+        vals = [v for v in vals if v is not None]
+        return round(sum(vals) / len(vals), 1) if vals else None
+
+    trend, yoy = [], []
     for m in range(1, 13):
-        row = {"bulan": MONTHS[m][:3] if m < 12 else "Des", "month": m}
-        row["bulan"] = MONTHS[m - 1][:3]
+        row = {"bulan": MONTHS[m - 1][:3], "month": m}
+        cur_all, prev_all = [], []
         for p in ds["programs"]:
             vals = [aggregate(i, by_month_for(p["id"], i["id"], reports), [m])["persen"] for i in p["indicators"]]
-            vals = [v for v in vals if v is not None]
-            row[p["name"]] = round(sum(vals) / len(vals), 1) if vals else None
+            pvals = [aggregate(i, by_month_for(p["id"], i["id"], prev_reports), [m])["persen"] for i in p["indicators"]]
+            row[p["name"]] = avg(vals)
+            cur_all += vals
+            prev_all += pvals
         trend.append(row)
-    return {"periode": ds["periode"], "programs": ds["programs"], "completeness": comp, "trend": trend,
+        yoy.append({"bulan": row["bulan"], "tahun_ini": avg(cur_all), "tahun_lalu": avg(prev_all)})
+    spm = []
+    for p in ds["programs"]:
+        for i in p["indicators"]:
+            i["recap_prev"] = aggregate(i, by_month_for(p["id"], i["id"], prev_reports), prev_months)
+            a, b = i["recap"]["persen"], i["recap_prev"]["persen"]
+            i["selisih"] = round(a - b, 2) if a is not None and b is not None else None
+        sts = [i["recap"]["status"] for i in p["indicators"]]
+        p["ringkasan"] = {"rata_persen": avg([i["recap"]["persen"] for i in p["indicators"]]),
+                          "rata_persen_lalu": avg([i["recap_prev"]["persen"] for i in p["indicators"]]),
+                          "tercapai": sts.count("tercapai"), "total": len(sts),
+                          "belum_tersedia": sts.count("belum_tersedia")}
+        p["status_bulanan"] = [all_reports[(p["id"], m)]["status"] if (p["id"], m) in all_reports else None for m in range(1, 13)]
+        spm.append({"nama": p["name"], "tahun_ini": p["ringkasan"]["rata_persen"], "tahun_lalu": p["ringkasan"]["rata_persen_lalu"]})
+    prev_pers = [i["recap_prev"]["persen"] for i in inds if i["recap_prev"]["persen"] is not None]
+    dist = {k: st.count(k) for k in ["tercapai", "belum_tercapai", "sasaran_kosong", "target_kosong", "belum_tersedia"]}
+    return {"periode": ds["periode"], "periode_lalu": period_label(period, year - 1, month, quarter),
+            "programs": ds["programs"], "completeness": comp, "trend": trend, "yoy_trend": yoy, "yoy_spm": spm,
+            "distribusi": dist,
             "summary": {"indikator": len(inds), "tercapai": st.count("tercapai"),
                         "belum_tercapai": st.count("belum_tercapai"), "belum_tersedia": st.count("belum_tersedia"),
-                        "rata_persen": round(sum(pers) / len(pers), 1) if pers else None}}
+                        "rata_persen": round(sum(pers) / len(pers), 1) if pers else None,
+                        "rata_persen_lalu": round(sum(prev_pers) / len(prev_pers), 1) if prev_pers else None}}
 
 
 # ---------- Reports ----------

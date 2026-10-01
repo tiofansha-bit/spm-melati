@@ -5,6 +5,7 @@ import { Target, CheckCircle2, AlertTriangle, CircleDashed, Gauge, ClipboardChec
 import { api, currentPeriod, fmtDate } from "@/lib/api";
 import { PageHeader, PeriodFilter, ProgramSelect, useMyPrograms, Card, Num, NA, RecapBadge, StatusBadge, Empty } from "@/components/common";
 import { Progress } from "@/components/ui/progress";
+import { Delta, YoyCard, DistributionCard, StatusGrid } from "@/components/DashboardDetail";
 
 const COLORS = ["#1A4D3A", "#10B981", "#D97706", "#0E7490", "#9F1239", "#4D7C0F", "#7C2D12"];
 
@@ -23,11 +24,17 @@ const ProgramRecap = ({ p }) => (
   <Card className="overflow-hidden p-0" data-testid={`recap-program-${p.id}`}>
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E6EEE8] bg-[#F3F7F2] px-5 py-3">
       <div><div className="font-display text-lg font-semibold text-[#12372A]">{p.name}</div><div className="text-xs text-slate-500">PJ: {p.pj_name || "Belum ditetapkan"}</div></div>
+      <div className="flex flex-wrap items-center gap-4 text-xs" data-testid={`spm-summary-${p.id}`}>
+        <span>Rata-rata <b className="font-mono-num text-sm text-[#12372A]">{p.ringkasan.rata_persen === null ? "–" : `${p.ringkasan.rata_persen.toLocaleString("id-ID")}%`}</b></span>
+        <span>Tahun lalu <b className="font-mono-num text-sm text-slate-600">{p.ringkasan.rata_persen_lalu === null ? "–" : `${p.ringkasan.rata_persen_lalu.toLocaleString("id-ID")}%`}</b></span>
+        <Delta value={p.ringkasan.rata_persen !== null && p.ringkasan.rata_persen_lalu !== null ? Math.round((p.ringkasan.rata_persen - p.ringkasan.rata_persen_lalu) * 10) / 10 : null} testid={`spm-delta-${p.id}`} />
+        <span className="rounded-full bg-white px-2.5 py-0.5 font-semibold text-emerald-800">{p.ringkasan.tercapai}/{p.ringkasan.total} tercapai</span>
+      </div>
     </div>
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] text-sm">
+      <table className="w-full min-w-[900px] text-sm">
         <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500">
-          <th className="px-5 py-3">Program</th><th className="px-3">Sasaran</th><th className="px-3">Target periode</th><th className="px-3">Capaian</th><th className="px-3 w-44">Persentase</th><th className="px-3">Status</th>
+          <th className="px-5 py-3">Program</th><th className="px-3">Sasaran</th><th className="px-3">Target periode</th><th className="px-3">Capaian</th><th className="px-3 w-44">Persentase</th><th className="px-3">Tahun lalu</th><th className="px-3">Selisih</th><th className="px-3">Status</th>
         </tr></thead>
         <tbody>
           {p.indicators.map((i) => (
@@ -38,10 +45,12 @@ const ProgramRecap = ({ p }) => (
               <td className="px-3"><Num v={i.recap.capaian} /></td>
               <td className="px-3">{i.recap.persen === null ? <NA /> : (
                 <div className="flex items-center gap-2"><Progress value={Math.min(100, i.recap.persen)} className="h-2 bg-[#E6EEE8]" /><span className="font-mono-num w-16 text-right">{i.recap.persen.toLocaleString("id-ID")}%</span></div>)}</td>
+              <td className="px-3"><Num v={i.recap_prev.persen} pct /></td>
+              <td className="px-3"><Delta value={i.selisih} testid={`delta-${i.id}`} /></td>
               <td className="px-3"><RecapBadge status={i.recap.status} /></td>
             </tr>
           ))}
-          {p.indicators.length === 0 && <tr><td colSpan={6} className="px-5 py-4 text-slate-500">Belum ada program.</td></tr>}
+          {p.indicators.length === 0 && <tr><td colSpan={8} className="px-5 py-4 text-slate-500">Belum ada program.</td></tr>}
         </tbody>
       </table>
     </div>
@@ -73,7 +82,8 @@ export default function Dashboard() {
             <Kpi testid="kpi-achieved" icon={CheckCircle2} label="Tercapai" value={d.summary.tercapai} tone="text-emerald-600" />
             <Kpi testid="kpi-not-achieved" icon={AlertTriangle} label="Belum tercapai" value={d.summary.belum_tercapai} tone="text-rose-600" />
             <Kpi testid="kpi-unavailable" icon={CircleDashed} label="Belum tersedia" value={d.summary.belum_tersedia} tone="text-slate-500" />
-            <Kpi testid="kpi-average" icon={Gauge} label="Rata-rata capaian" value={d.summary.rata_persen === null ? <span className="text-base"><NA /></span> : `${d.summary.rata_persen.toLocaleString("id-ID")}%`} />
+            <Kpi testid="kpi-average" icon={Gauge} label="Rata-rata capaian" value={d.summary.rata_persen === null ? <span className="text-base"><NA /></span> : `${d.summary.rata_persen.toLocaleString("id-ID")}%`}
+              sub={<span className="flex flex-wrap items-center gap-1">{d.periode_lalu}: {d.summary.rata_persen_lalu === null ? "belum tersedia" : `${d.summary.rata_persen_lalu.toLocaleString("id-ID")}%`}{d.summary.rata_persen !== null && d.summary.rata_persen_lalu !== null && <Delta value={Math.round((d.summary.rata_persen - d.summary.rata_persen_lalu) * 10) / 10} testid="kpi-average-delta" />}</span>} />
             <Kpi testid="kpi-completeness" icon={ClipboardCheck} label="Kelengkapan" value={c.persen === null ? <span className="text-base"><NA /></span> : `${c.persen}%`} sub={`${c.submitted}/${c.expected} laporan · ${c.late} terlambat`} />
           </div>
 
@@ -108,6 +118,12 @@ export default function Dashboard() {
               )}
               <Link to="/laporan" className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:underline" data-testid="goto-reports-link">Buka laporan →</Link>
             </Card>
+          </div>
+
+          <YoyCard d={d} year={per.year} />
+          <div className="grid gap-6 xl:grid-cols-[1fr_1.6fr]">
+            <DistributionCard dist={d.distribusi} />
+            <StatusGrid programs={d.programs} year={per.year} />
           </div>
 
           <div className="space-y-5">
