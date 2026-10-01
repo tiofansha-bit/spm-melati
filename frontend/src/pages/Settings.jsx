@@ -74,14 +74,14 @@ export default function Settings() {
               <Button variant="outline" className="btn-soft" data-testid="test-email-button" onClick={testMail}><Send className="mr-1 h-4 w-4" />Kirim email uji</Button>
             </div>
           )}
-          <p className="text-xs text-slate-500">Laporan bulan N jatuh tempo pada tanggal tenggat di bulan N+1. Pengingat hanya dikirim untuk SPM yang laporannya belum diajukan. Akun demo (.test) tidak dikirimi email.</p>
+          <p className="text-xs text-slate-500">Laporan bulan N jatuh tempo pada tanggal tenggat di bulan N+1. Pengingat hanya dikirim untuk SPM/program yang laporannya belum diajukan. Akun demo (.test) tidak dikirimi email.</p>
         </Card>
         <Card data-testid="reminder-log-card">
           <div className="mb-4 font-display text-lg font-semibold text-[#12372A]">Log pengingat</div>
           {logs.length === 0 ? <Empty>Belum ada pengingat terkirim.</Empty> : (
             <div className="max-h-[440px] overflow-auto">
               <table className="w-full min-w-[520px] text-sm">
-                <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="py-2">Waktu</th><th>Tahap</th><th>SPM</th><th>Email</th></tr></thead>
+                <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="py-2">Waktu</th><th>Tahap</th><th>SPM/Program</th><th>Email</th></tr></thead>
                 <tbody>{logs.map((l) => (
                   <tr key={l.id} className="border-t border-[#EEF3EF]"><td className="py-2 pr-2 text-xs text-slate-500">{fmtDate(l.created_at, true)}</td><td className="pr-2">{STAGE[l.stage]}</td><td className="pr-2">{l.program}<div className="text-xs text-slate-500">{l.periode} · {l.pj}</div></td><td className="text-xs text-slate-600">{l.email}</td></tr>
                 ))}</tbody>

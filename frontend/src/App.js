@@ -33,11 +33,15 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<Protected><Layout /></Protected>}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/laporan" element={<Reports />} />
+            <Route path="/" element={<Navigate to="/dashboard/spm" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/dashboard/spm" replace />} />
+            <Route path="/dashboard/:kind" element={<Dashboard />} />
+            <Route path="/laporan" element={<Navigate to="/laporan-spm" replace />} />
+            <Route path="/laporan-spm" element={<Reports kind="spm" />} />
+            <Route path="/laporan-program" element={<Reports kind="program" />} />
             <Route path="/laporan/:id" element={<ReportEditor />} />
-            <Route path="/program" element={<Programs />} />
+            <Route path="/program" element={<Navigate to="/master/program" replace />} />
+            <Route path="/master/:kind" element={<Programs />} />
             <Route path="/pengguna" element={<UsersPage />} />
             <Route path="/tabel" element={<Tables />} />
             <Route path="/tabel/:id" element={<TableEditor />} />
@@ -49,7 +53,7 @@ function App() {
             <Route path="/pengingat" element={<Settings />} />
             <Route path="/aktivitas" element={<Activity />} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard/spm" replace />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />

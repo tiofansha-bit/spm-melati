@@ -9,8 +9,8 @@ from recap import build_dataset
 logger = logging.getLogger(__name__)
 AI_MODEL = ("gemini", "gemini-3-flash-preview")
 
-BASE_RULES = """Anda analis SPM kesehatan Puskesmas. Gunakan Bahasa Indonesia.
-ISTILAH: "SPM" (Standar Pelayanan Minimal) adalah tingkat atas; "program" adalah butir/indikator di dalam SPM (pada DATA, kunci "program" = nama SPM dan kunci "indikator" = daftar program). Gunakan istilah SPM dan program ini di semua teks keluaran.
+BASE_RULES = """Anda analis SPM dan program kesehatan Puskesmas. Gunakan Bahasa Indonesia.
+ISTILAH: data dapat berupa SPM (Standar Pelayanan Minimal) atau program puskesmas; masing-masing memiliki indikator. Gunakan istilah sesuai jenisnya.
 ATURAN KETAT:
 - Gunakan HANYA data yang diberikan. Jangan mengarang angka, penyebab, kejadian, atau referensi ilmiah.
 - Setiap butir wajib memiliki "jenis": "fakta" (tertulis langsung di data) atau "dugaan" (inferensi yang perlu diverifikasi).
@@ -51,7 +51,7 @@ def compact_context(ds, followups):
     progs = []
     for p in ds["programs"]:
         progs.append({
-            "program": p["name"], "pj": p.get("pj_name"),
+            "nama": p["name"], "jenis": "SPM" if p.get("kind") == "spm" else "Program", "pj": p.get("pj_name"),
             "indikator": [{"nama": i["name"], "satuan": i.get("unit"), "metode": i.get("method"),
                            "sasaran": i["recap"]["sasaran"], "target_persen_periode": i["recap"]["target_periode"],
                            "capaian": i["recap"]["capaian"], "persen_capaian": i["recap"]["persen"],
@@ -91,7 +91,7 @@ Format JSON:
 DATA:
 {ctx}"""
 
-PRES_PROMPT = """Tulis analisis singkat capaian SPM untuk slide presentasi (maks 5 butir) dari DATA berikut.
+PRES_PROMPT = """Tulis analisis singkat capaian untuk slide presentasi (maks 5 butir) dari DATA berikut.
 Format JSON: {{"analisis":[{{"teks":"","jenis":"fakta|dugaan","sumber":""}}]}}
 DATA:
 {ctx}"""

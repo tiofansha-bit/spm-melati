@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from core import (db, MONTHS, WIB, STATUS_LABEL, now, now_iso, new_id, hash_password, verify_password,
                   create_token, get_current_user, require, log_activity, notify, notify_role, get_program,
                   can_edit_program, get_settings)
-from recap import (REPORTED, aggregate, by_month_for, build_dataset, completeness, deadline_for, load_reports,
+from recap import (unit_label, REPORTED, aggregate, by_month_for, build_dataset, completeness, deadline_for, load_reports,
                    period_label, period_months, programs_with_indicators)
 import ai
 import exports
@@ -135,6 +135,7 @@ class ProgramIn(BaseModel):
     pj_user_id: Optional[str] = None
     labels: List[str] = []
     profile: List[dict] = []
+    kind: str = Field("program", pattern="^(spm|program)$")
 
 
 class IndicatorIn(BaseModel):
@@ -148,14 +149,14 @@ class IndicatorIn(BaseModel):
 
 
 @api.get("/programs")
-async def list_programs(user=Depends(get_current_user)):
-    return await programs_with_indicators()
+async def list_programs(kind: Optional[str] = None, user=Depends(get_current_user)):
+    return await programs_with_indicators(None, kind)
 
 
 async def editable_program(pid, user):
     p = await get_program(pid)
     if not can_edit_program(user, p):
-        raise HTTPException(403, "Hanya admin atau PJ SPM ini yang dapat mengubah")
+        raise HTTPException(403, "Hanya admin atau PJ yang bersangkutan yang dapat mengubah")
     return p
 
 
@@ -236,19 +237,19 @@ async def scope_programs(user, program_id=None):
         return None
     own = [p["id"] async for p in db.programs.find({"pj_user_id": user["id"]}, {"id": 1, "_id": 0})]
     if program_id and program_id not in own:
-        raise HTTPException(403, "PJ hanya dapat melihat data SPM-nya sendiri")
+        raise HTTPException(403, "PJ hanya dapat melihat data SPM/program miliknya sendiri")
     return own
 
 
 @api.get("/dashboard")
 async def dashboard(year: int, period: str = "bulanan", month: int = 1, quarter: int = 1,
-                    program_id: Optional[str] = None, user=Depends(get_current_user)):
+                    program_id: Optional[str] = None, kind: Optional[str] = None, user=Depends(get_current_user)):
     own = await scope_programs(user, program_id)
-    ds = await build_dataset(year, period, month, quarter, program_id)
+    ds = await build_dataset(year, period, month, quarter, program_id, kind=kind)
     if own is not None:
         ds["programs"] = [p for p in ds["programs"] if p["id"] in own]
     settings = await get_settings()
-    comp = await completeness(year, ds["months"], settings, [program_id] if program_id else own)
+    comp = await completeness(year, ds["months"], settings, [program_id] if program_id else own, kind)
     inds = [i for p in ds["programs"] for i in p["indicators"]]
     st = [i["recap"]["status"] for i in inds]
     pers = [i["recap"]["persen"] for i in inds if i["recap"]["persen"] is not None]
@@ -344,8 +345,11 @@ async def get_report(rid):
 
 @api.get("/reports")
 async def list_reports(year: Optional[int] = None, month: Optional[int] = None, program_id: Optional[str] = None,
-                       status: Optional[str] = None, user=Depends(get_current_user)):
+                       status: Optional[str] = None, kind: Optional[str] = None, user=Depends(get_current_user)):
     q = {}
+    if kind:
+        kq = {"kind": kind} if kind == "spm" else {"kind": {"$ne": "spm"}}
+        q["program_id"] = {"$in": [p["id"] async for p in db.programs.find(kq, {"id": 1, "_id": 0})]}
     if year:
         q["year"] = year
     if month:
@@ -356,6 +360,8 @@ async def list_reports(year: Optional[int] = None, month: Optional[int] = None, 
         q["status"] = status
     if user["role"] == "pj":
         mine = [p["id"] async for p in db.programs.find({"pj_user_id": user["id"]}, {"id": 1, "_id": 0})]
+        if "program_id" in q:
+            mine = [m for m in mine if m in q["program_id"]["$in"]]
         q["program_id"] = {"$in": mine} if not program_id else (program_id if program_id in mine else "__none__")
     rows = await db.reports.find(q, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(1000)
     progs = {p["id"]: p["name"] async for p in db.programs.find({}, {"_id": 0, "id": 1, "name": 1})}
@@ -369,7 +375,7 @@ async def list_reports(year: Optional[int] = None, month: Optional[int] = None, 
 async def create_report(body: ReportCreate, user=Depends(get_current_user)):
     p = await get_program(body.program_id)
     if not can_edit_program(user, p):
-        raise HTTPException(403, "Hanya PJ SPM atau admin yang dapat membuat laporan")
+        raise HTTPException(403, "Hanya PJ terkait atau admin yang dapat membuat laporan")
     ex = await db.reports.find_one({"program_id": p["id"], "year": body.year, "month": body.month}, {"_id": 0})
     if ex:
         return ex
@@ -426,7 +432,7 @@ async def submit_report(rid: str, user=Depends(get_current_user)):
     if not can_edit_program(user, p) or r["status"] not in ("draf", "perlu_perbaikan"):
         raise HTTPException(400, "Laporan tidak dapat diajukan pada status ini")
     if not any(i.get("capaian") is not None for i in r.get("items", [])):
-        raise HTTPException(400, "Isi minimal satu capaian program sebelum mengajukan")
+        raise HTTPException(400, "Isi minimal satu capaian indikator sebelum mengajukan")
     upd = {"status": "diajukan", "submitted_at": now_iso(), "updated_at": now_iso()}
     await db.reports.update_one({"id": rid}, {"$set": upd})
     r.update(upd)
@@ -647,7 +653,7 @@ async def generate_analysis(body: AnalysisGen, user=Depends(get_current_user)):
             g, i = max(gaps, key=lambda x: x[0])
             masalah = f"Capaian {i['name']} {exports.fmt(i['recap']['persen'], True)} di bawah target periode {exports.fmt(i['recap']['target_periode'], True)}"
         else:
-            raise HTTPException(400, "Tidak ada program di bawah target. Tuliskan masalah yang ingin dianalisis.")
+            raise HTTPException(400, "Tidak ada indikator di bawah target. Tuliskan masalah yang ingin dianalisis.")
     try:
         prompt = (ai.SWOT_PROMPT.format(ctx=ctx) if body.type == "swot" else ai.FISH_PROMPT.format(masalah=masalah, ctx=ctx))
         content = await ai.ai_json(prompt)
@@ -658,7 +664,7 @@ async def generate_analysis(body: AnalysisGen, user=Depends(get_current_user)):
            "period": body.period, "month": body.month, "quarter": body.quarter, "periode": ds["periode"],
            "masalah": masalah, "content": content,
            "rujukan": ai.SWOT_REFS if body.type == "swot" else ai.FISH_REFS,
-           "sumber_data": f"Laporan bulanan SPM {p['name']} berstatus Diajukan/Perlu perbaikan/Disetujui, {ds['periode']}; daftar tindak lanjut SPM.",
+           "sumber_data": f"Laporan bulanan {unit_label(p)} {p['name']} berstatus Diajukan/Perlu perbaikan/Disetujui, {ds['periode']}; daftar tindak lanjut.",
            "validations": [], "status": "menunggu_validasi", "created_by": user["name"], "created_at": now_iso(),
            "updated_at": now_iso()}
     await db.analyses.insert_one(doc)
@@ -708,7 +714,7 @@ async def validate_analysis(aid: str, body: ValidateIn, user=Depends(get_current
     p = await get_program(a["program_id"])
     role = "kepala" if user["role"] == "kepala" else ("pj" if p.get("pj_user_id") == user["id"] else None)
     if not role:
-        raise HTTPException(403, "Validasi hanya oleh PJ SPM dan Kepala Puskesmas")
+        raise HTTPException(403, "Validasi hanya oleh PJ terkait dan Kepala Puskesmas")
     vals = [v for v in a.get("validations", []) if v["role"] != role]
     vals.append({"role": role, "user_name": user["name"], "status": body.status, "note": body.note, "at": now_iso()})
     roles_ok = {v["role"] for v in vals if v["status"] == "valid"}
@@ -745,18 +751,18 @@ def _narr_bullets(p, key):
 async def generate_presentation(body: PresGen, user=Depends(get_current_user)):
     prog = await get_program(body.program_id)
     if user["role"] == "pj" and prog.get("pj_user_id") != user["id"]:
-        raise HTTPException(403, "PJ hanya dapat membuat presentasi untuk SPM-nya sendiri")
+        raise HTTPException(403, "PJ hanya dapat membuat presentasi untuk SPM/program miliknya")
     ds, ctx = await ai.context_for(body.program_id, body.year, body.period, body.month, body.quarter, db, body.include_draft)
     p = ds["programs"][0]
     inds = p["indicators"]
     has_draft = any(n["status"] == "draf" for n in p["narasi"])
     sid = new_id
     slides = [
-        {"id": sid(), "layout": "title", "title": f"Capaian SPM {p['name']}",
+        {"id": sid(), "layout": "title", "title": f"Capaian {unit_label(p)} {p['name']}",
          "subtitle": f"{ds['periode']}  |  PJ: {p.get('pj_name') or '-'}  |  UPT Puskesmas Melati" + ("  |  Memuat data draf" if has_draft else ""),
-         "bullets": [], "notes": "Disusun dari data yang dientri PJ SPM pada laporan bulanan."},
+         "bullets": [], "notes": "Disusun dari data yang dientri PJ pada laporan bulanan."},
         {"id": sid(), "layout": "table", "title": "Capaian Program",
-         "table": {"headers": ["Program", "Sasaran", "Target (%)", "Capaian", "Capaian (%)", "Status"],
+         "table": {"headers": ["Indikator", "Sasaran", "Target (%)", "Capaian", "Capaian (%)", "Status"],
                    "rows": [[r[0], r[3], r[4], r[5], r[6], r[7]] for r in map(exports.ind_row, inds)]}, "bullets": []},
         {"id": sid(), "layout": "chart", "title": "Grafik Capaian vs Target (%)",
          "chart": {"labels": [i["name"][:40] for i in inds],
@@ -842,11 +848,11 @@ def _file(data, name, fmt):
 
 @api.get("/export/report")
 async def export_report(format: str, year: int, period: str = "bulanan", month: int = 1, quarter: int = 1,
-                        program_id: Optional[str] = None, user=Depends(get_current_user)):
+                        program_id: Optional[str] = None, kind: Optional[str] = None, user=Depends(get_current_user)):
     if format not in ("docx", "xlsx", "pdf"):
         raise HTTPException(400, "Format tidak didukung")
     own = await scope_programs(user, program_id)
-    ds = await build_dataset(year, period, month, quarter, program_id or None)
+    ds = await build_dataset(year, period, month, quarter, program_id or None, kind=kind or None)
     if own is not None:
         ds["programs"] = [p for p in ds["programs"] if p["id"] in own]
     data = {"docx": exports.report_docx, "xlsx": exports.report_xlsx, "pdf": exports.report_pdf}[format](ds)
@@ -955,9 +961,9 @@ async def run_reminders(force=False):
                 continue
             pj = users.get(p.get("pj_user_id"))
             per = f"{MONTHS[mm - 1]} {yy}"
-            msg = {"akhir_bulan": f"Hari ini akhir bulan. Mohon lengkapi laporan SPM {p['name']} periode {per}. Tenggat: {dlx.strftime('%d-%m-%Y')}.",
-                   "sebelum_tenggat": f"Tenggat laporan SPM {p['name']} periode {per} jatuh pada {dlx.strftime('%d-%m-%Y')} ({(dlx.date() - today).days} hari lagi).",
-                   "terlambat": f"Laporan SPM {p['name']} periode {per} melewati tenggat {dlx.strftime('%d-%m-%Y')} dan belum diajukan."}[stage]
+            msg = {"akhir_bulan": f"Hari ini akhir bulan. Mohon lengkapi laporan {unit_label(p)} {p['name']} periode {per}. Tenggat: {dlx.strftime('%d-%m-%Y')}.",
+                   "sebelum_tenggat": f"Tenggat laporan {unit_label(p)} {p['name']} periode {per} jatuh pada {dlx.strftime('%d-%m-%Y')} ({(dlx.date() - today).days} hari lagi).",
+                   "terlambat": f"Laporan {unit_label(p)} {p['name']} periode {per} melewati tenggat {dlx.strftime('%d-%m-%Y')} dan belum diajukan."}[stage]
             email_res = "Email dinonaktifkan"
             if pj:
                 await notify(pj["id"], f"Pengingat: {STAGE_TXT[stage]}", msg, "/laporan", "pengingat")
@@ -973,7 +979,7 @@ async def run_reminders(force=False):
             sent += 1
             results.append({"program": p["name"], "stage": stage, "email": email_res})
         if late_names:
-            await notify_role("kepala", "Laporan terlambat", f"{len(late_names)} SPM terlambat ({MONTHS[mm - 1]} {yy}): {', '.join(late_names)}",
+            await notify_role("kepala", "Laporan terlambat", f"{len(late_names)} SPM/program terlambat ({MONTHS[mm - 1]} {yy}): {', '.join(late_names)}",
                               "/dashboard", "pengingat")
     return {"sent": sent, "jobs": [j[0] for j in jobs], "results": results}
 

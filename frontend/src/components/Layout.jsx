@@ -9,14 +9,20 @@ import { api, ROLES, fmtDate } from "@/lib/api";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, id: "dashboard" },
-  { to: "/laporan", label: "Laporan SPM", icon: FileText, id: "laporan" },
+  { group: "SPM" },
+  { to: "/dashboard/spm", label: "Dashboard SPM", icon: LayoutDashboard, id: "dashboard-spm" },
+  { to: "/laporan-spm", label: "Laporan SPM", icon: FileText, id: "laporan-spm" },
+  { to: "/master/spm", label: "Data SPM", icon: Layers, id: "master-spm" },
+  { group: "Program" },
+  { to: "/dashboard/program", label: "Dashboard Program", icon: LayoutDashboard, id: "dashboard-program" },
+  { to: "/laporan-program", label: "Laporan Program", icon: FileText, id: "laporan-program" },
+  { to: "/master/program", label: "Program & Indikator", icon: Layers, id: "master-program" },
+  { group: "Evaluasi & Alat" },
   { to: "/tindak-lanjut", label: "Tindak Lanjut", icon: ListChecks, id: "tindak-lanjut" },
   { to: "/analisis", label: "SWOT & Fishbone", icon: Microscope, id: "analisis" },
   { to: "/presentasi", label: "Presentasi", icon: Presentation, id: "presentasi" },
   { to: "/tabel", label: "Tabel Fleksibel", icon: Table2, id: "tabel" },
   { to: "/ekspor", label: "Ekspor", icon: Download, id: "ekspor" },
-  { to: "/program", label: "SPM & Program", icon: Layers, id: "program" },
   { to: "/pengguna", label: "Pengguna", icon: Users, id: "pengguna", roles: ["admin"] },
   { to: "/pengingat", label: "Pengingat & Integrasi", icon: BellRing, id: "pengingat" },
   { to: "/aktivitas", label: "Riwayat Aktivitas", icon: History, id: "aktivitas", roles: ["admin", "kepala"] },
@@ -29,7 +35,9 @@ const SideNav = ({ role, onNavigate }) => (
       <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800/70">UPT Puskesmas Melati</div>
     </div>
     <div className="flex-1 space-y-1 overflow-y-auto px-3">
-      {NAV.filter((n) => !n.roles || n.roles.includes(role)).map((n) => (
+      {NAV.filter((n) => !n.roles || n.roles.includes(role)).map((n) => n.group ? (
+        <div key={n.group} className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800/60">{n.group}</div>
+      ) : (
         <NavLink key={n.to} to={n.to} onClick={onNavigate} data-testid={`sidebar-nav-${n.id}`}
           className={({ isActive }) => `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${isActive ? "bg-[#1A4D3A] text-white shadow-sm" : "text-slate-700 hover:bg-[#E6F0E8] hover:text-[#1A4D3A]"}`}>
           <n.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} />
@@ -93,7 +101,7 @@ export default function Layout() {
           <div className="flex items-center gap-3">
             <button className="rounded-lg p-2 hover:bg-[#E6F0E8] lg:hidden" onClick={() => setOpen(true)} data-testid="mobile-menu-button"><Menu className="h-5 w-5" /></button>
             <img src="/logo-mark.png" alt="" className="h-8 w-8 lg:hidden" />
-            <span className="hidden text-sm text-slate-500 sm:inline">Pelaporan & Evaluasi SPM</span>
+            <span className="hidden text-sm text-slate-500 sm:inline">Pelaporan & Evaluasi SPM dan Program</span>
           </div>
           <div className="flex items-center gap-2">
             <Notifications />

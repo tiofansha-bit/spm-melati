@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Target, CheckCircle2, AlertTriangle, CircleDashed, Gauge, ClipboardCheck, Clock } from "lucide-react";
-import { api, currentPeriod, fmtDate } from "@/lib/api";
+import { useParams } from "react-router-dom";
+import { api, currentPeriod, fmtDate, TERM } from "@/lib/api";
 import { PageHeader, PeriodFilter, ProgramSelect, useMyPrograms, Card, Num, NA, RecapBadge, StatusBadge, Empty } from "@/components/common";
 import { Progress } from "@/components/ui/progress";
 import { Delta, YoyCard, DistributionCard, StatusGrid } from "@/components/DashboardDetail";
@@ -34,7 +35,7 @@ const ProgramRecap = ({ p }) => (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[900px] text-sm">
         <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500">
-          <th className="px-5 py-3">Program</th><th className="px-3">Sasaran</th><th className="px-3">Target periode</th><th className="px-3">Capaian</th><th className="px-3 w-44">Persentase</th><th className="px-3">Tahun lalu</th><th className="px-3">Selisih</th><th className="px-3">Status</th>
+          <th className="px-5 py-3">Indikator</th><th className="px-3">Sasaran</th><th className="px-3">Target periode</th><th className="px-3">Capaian</th><th className="px-3 w-44">Persentase</th><th className="px-3">Tahun lalu</th><th className="px-3">Selisih</th><th className="px-3">Status</th>
         </tr></thead>
         <tbody>
           {p.indicators.map((i) => (
@@ -58,27 +59,30 @@ const ProgramRecap = ({ p }) => (
 );
 
 export default function Dashboard() {
+  const { kind = "spm" } = useParams();
+  const T = TERM[kind] || "SPM";
   const [per, setPer] = useState(currentPeriod());
   const [programId, setProgramId] = useState("");
-  const programs = useMyPrograms();
+  const programs = useMyPrograms(kind);
   const [d, setD] = useState(null);
 
+  useEffect(() => { setProgramId(""); setD(null); }, [kind]);
   useEffect(() => {
-    api.get("/dashboard", { params: { ...per, program_id: programId || undefined } }).then((r) => setD(r.data));
-  }, [per, programId]);
+    api.get("/dashboard", { params: { ...per, kind, program_id: programId || undefined } }).then((r) => setD(r.data));
+  }, [per, programId, kind]);
 
   const c = d?.completeness;
   const lateRows = c?.rows.filter((r) => r.late || r.status === "belum_dibuat" || r.status === "draf") || [];
   return (
     <div>
-      <PageHeader eyebrow="Dashboard" title={d ? d.periode : "Dashboard"} subtitle="Rekap triwulan & tahunan dihitung dari laporan bulanan sesuai metode tiap program. Data yang belum dilaporkan tidak dihitung sebagai nol.">
-        <ProgramSelect programs={programs} value={programId} onChange={setProgramId} allowAll />
+      <PageHeader eyebrow={`Dashboard ${T}`} title={d ? d.periode : `Dashboard ${T}`} subtitle={`Capaian ${kind === "spm" ? "Standar Pelayanan Minimal (SPM)" : "program puskesmas"}. Rekap triwulan & tahunan dihitung dari laporan bulanan sesuai metode tiap indikator. Data yang belum dilaporkan tidak dihitung sebagai nol.`}>
+        <ProgramSelect programs={programs} value={programId} onChange={setProgramId} allowAll noun={T} testid="dashboard-program-select" />
         <PeriodFilter value={per} onChange={setPer} />
       </PageHeader>
       {!d ? <div className="text-sm text-slate-500">Memuat data…</div> : (
         <div className="space-y-8">
           <div className="stagger grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-            <Kpi testid="kpi-indicators" icon={Target} label="Program" value={d.summary.indikator} />
+            <Kpi testid="kpi-indicators" icon={Target} label="Indikator" value={d.summary.indikator} />
             <Kpi testid="kpi-achieved" icon={CheckCircle2} label="Tercapai" value={d.summary.tercapai} tone="text-emerald-600" />
             <Kpi testid="kpi-not-achieved" icon={AlertTriangle} label="Belum tercapai" value={d.summary.belum_tercapai} tone="text-rose-600" />
             <Kpi testid="kpi-unavailable" icon={CircleDashed} label="Belum tersedia" value={d.summary.belum_tersedia} tone="text-slate-500" />
@@ -90,7 +94,7 @@ export default function Dashboard() {
           <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
             <Card data-testid="trend-chart">
               <div className="mb-1 font-display text-lg font-semibold text-[#12372A]">Tren capaian bulanan {per.year}</div>
-              <div className="mb-4 text-xs text-slate-500">Rata-rata persentase capaian program per bulan. Titik kosong = belum tersedia.</div>
+              <div className="mb-4 text-xs text-slate-500">Rata-rata persentase capaian indikator per bulan. Titik kosong = belum tersedia.</div>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={d.trend} margin={{ left: -10, right: 10 }}>
@@ -116,18 +120,18 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
-              <Link to="/laporan" className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:underline" data-testid="goto-reports-link">Buka laporan →</Link>
+              <Link to={`/laporan-${kind}`} className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:underline" data-testid="goto-reports-link">Buka laporan →</Link>
             </Card>
           </div>
 
-          <YoyCard d={d} year={per.year} />
+          <YoyCard d={d} year={per.year} noun={T} />
           <div className="grid gap-6 xl:grid-cols-[1fr_1.6fr]">
             <DistributionCard dist={d.distribusi} />
-            <StatusGrid programs={d.programs} year={per.year} />
+            <StatusGrid programs={d.programs} year={per.year} noun={T} />
           </div>
 
           <div className="space-y-5">
-            <h2 className="font-display text-xl font-semibold text-[#12372A]">Rekap per SPM</h2>
+            <h2 className="font-display text-xl font-semibold text-[#12372A]">Rekap per {T}</h2>
             {d.programs.map((p) => <ProgramRecap key={p.id} p={p} />)}
           </div>
         </div>

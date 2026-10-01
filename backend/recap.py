@@ -95,9 +95,15 @@ def by_month_for(program_id, indicator_id, reports):
     return res
 
 
-async def programs_with_indicators(program_id=None):
+def unit_label(p):
+    return "SPM" if p.get("kind") == "spm" else "Program"
+
+
+async def programs_with_indicators(program_id=None, kind=None):
     q = {"id": program_id} if program_id else {}
-    progs = await db.programs.find(q, NOID).sort("name", 1).to_list(500)
+    if kind:
+        q["kind"] = kind
+    progs = await db.programs.find(q, NOID).sort([("kind", -1), ("code", 1), ("name", 1)]).to_list(500)
     users = {u["id"]: u["name"] async for u in db.users.find({}, {"_id": 0, "id": 1, "name": 1})}
     for p in progs:
         p["pj_name"] = users.get(p.get("pj_user_id"))
@@ -105,9 +111,9 @@ async def programs_with_indicators(program_id=None):
     return progs
 
 
-async def build_dataset(year, period, month=None, quarter=None, program_id=None, include_draft=False):
+async def build_dataset(year, period, month=None, quarter=None, program_id=None, include_draft=False, kind=None):
     months = period_months(period, month, quarter)
-    progs = await programs_with_indicators(program_id)
+    progs = await programs_with_indicators(program_id, kind)
     reports = await load_reports(year, [p["id"] for p in progs], REPORTED + (["draf"] if include_draft else []))
     for p in progs:
         for ind in p["indicators"]:
@@ -118,12 +124,15 @@ async def build_dataset(year, period, month=None, quarter=None, program_id=None,
             if r:
                 p["narasi"].append({"bulan": MONTHS[m - 1], "status": r["status"], **{k: r.get(k, "") for k in
                                     ["kendala", "upaya", "hasil_upaya", "rtl", "dukungan"]}})
-    return {"periode": period_label(period, year, month, quarter), "year": int(year), "period": period,
+    return {"periode": period_label(period, year, month, quarter), "year": int(year), "period": period, "kind": kind,
             "months": months, "programs": progs}
 
 
-async def completeness(year, months, settings, program_ids=None):
-    progs = await db.programs.find({"id": {"$in": program_ids}} if program_ids else {}, NOID).to_list(500)
+async def completeness(year, months, settings, program_ids=None, kind=None):
+    q = {"id": {"$in": program_ids}} if program_ids is not None else {}
+    if kind:
+        q["kind"] = kind
+    progs = await db.programs.find(q, NOID).to_list(500)
     reports = await load_reports(year, [p["id"] for p in progs])
     t = now().astimezone(WIB)
     rows = []

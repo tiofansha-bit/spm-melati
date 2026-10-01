@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { FileText, FileSpreadsheet, FileDown, Presentation as PIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, errMsg, download, currentPeriod } from "@/lib/api";
-import { PageHeader, Card, PeriodFilter, ProgramSelect, useMyPrograms, Empty, Field } from "@/components/common";
+import { PageHeader, Card, PeriodFilter, ProgramSelect, useMyPrograms, Empty, Field, SimpleSelect } from "@/components/common";
 
 const FORMATS = [
   { f: "docx", label: "Word", icon: FileText },
@@ -12,7 +12,8 @@ const FORMATS = [
 ];
 
 export default function Exports() {
-  const programs = useMyPrograms();
+  const [kind, setKind] = useState("spm");
+  const programs = useMyPrograms(kind);
   const [per, setPer] = useState(currentPeriod());
   const [programId, setProgramId] = useState("");
   const [busy, setBusy] = useState("");
@@ -26,17 +27,18 @@ export default function Exports() {
 
   return (
     <div>
-      <PageHeader eyebrow="Ekspor" title="Ekspor Laporan & Presentasi" subtitle="Unduh laporan satu SPM atau kolektif ke Word, Excel, dan PDF; presentasi ke PowerPoint yang dapat diedit dan PDF." />
+      <PageHeader eyebrow="Ekspor" title="Ekspor Laporan & Presentasi" subtitle="Unduh laporan satu SPM/program atau kolektif ke Word, Excel, dan PDF; presentasi ke PowerPoint yang dapat diedit dan PDF." />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <Card className="space-y-5" data-testid="export-report-card">
-          <div className="font-display text-lg font-semibold text-[#12372A]">Laporan SPM</div>
-          <Field label="Cakupan"><ProgramSelect programs={programs} value={programId} onChange={setProgramId} allowAll testid="export-program-select" /></Field>
-          <p className="-mt-3 text-xs text-slate-500">“Semua SPM” menghasilkan laporan kolektif.</p>
+          <div className="font-display text-lg font-semibold text-[#12372A]">Laporan</div>
+          <Field label="Jenis laporan"><SimpleSelect testid="export-kind-select" value={kind} onChange={(v) => { setKind(v); setProgramId(""); }} options={[{ value: "spm", label: "SPM (Standar Pelayanan Minimal)" }, { value: "program", label: "Program" }]} /></Field>
+          <Field label="Cakupan"><ProgramSelect programs={programs} value={programId} onChange={setProgramId} allowAll noun={kind === "spm" ? "SPM" : "Program"} testid="export-program-select" /></Field>
+          <p className="-mt-3 text-xs text-slate-500">“Semua” menghasilkan laporan kolektif sesuai jenis laporan.</p>
           <Field label="Periode"><PeriodFilter value={per} onChange={setPer} /></Field>
           <div className="grid grid-cols-3 gap-3">
             {FORMATS.map(({ f, label, icon: Icon }) => (
               <Button key={f} variant="outline" data-testid={`export-report-${f}`} disabled={!!busy} className="btn-soft flex h-20 flex-col gap-1 rounded-xl"
-                onClick={() => run(f, "/export/report", { format: f, ...per, program_id: programId || undefined })}>
+                onClick={() => run(f, "/export/report", { format: f, ...per, kind, program_id: programId || undefined })}>
                 {busy === f ? <Loader2 className="h-5 w-5 animate-spin" /> : <Icon className="h-5 w-5" />}{label}
               </Button>
             ))}

@@ -16,10 +16,10 @@ export const Delta = ({ value, testid = "delta-value" }) => {
   );
 };
 
-export const YoyCard = ({ d, year }) => (
+export const YoyCard = ({ d, year, noun }) => (
   <Card data-testid="yoy-comparison-card">
     <div className="mb-1 font-display text-lg font-semibold text-[#12372A]">Perbandingan tahunan</div>
-    <div className="mb-4 text-xs text-slate-500">{d.periode} dibandingkan {d.periode_lalu}. Rata-rata persentase capaian program per SPM; kosong = belum tersedia.</div>
+    <div className="mb-4 text-xs text-slate-500">{d.periode} dibandingkan {d.periode_lalu}. Rata-rata persentase capaian indikator per {noun}; kosong = belum tersedia.</div>
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="h-72" data-testid="yoy-spm-chart">
         <ResponsiveContainer width="100%" height="100%">
@@ -58,13 +58,13 @@ export const DistributionCard = ({ dist }) => {
   const total = data.reduce((a, b) => a + b.value, 0);
   return (
     <Card data-testid="status-distribution-card">
-      <div className="mb-4 font-display text-lg font-semibold text-[#12372A]">Sebaran status program</div>
+      <div className="mb-4 font-display text-lg font-semibold text-[#12372A]">Sebaran status indikator</div>
       <div className="flex flex-col items-center gap-4 sm:flex-row">
         <div className="relative h-44 w-44 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart><Pie data={data} dataKey="value" innerRadius={50} outerRadius={78} paddingAngle={2} stroke="none">{data.map((x) => <Cell key={x.key} fill={DIST_COLORS[x.key]} />)}</Pie><Tooltip /></PieChart>
           </ResponsiveContainer>
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><span className="font-display text-2xl font-bold text-[#12372A]">{total}</span><span className="text-[10px] uppercase tracking-wider text-slate-500">program</span></div>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><span className="font-display text-2xl font-bold text-[#12372A]">{total}</span><span className="text-[10px] uppercase tracking-wider text-slate-500">indikator</span></div>
         </div>
         <ul className="w-full space-y-2 text-sm">
           {data.map((x) => (
@@ -81,7 +81,7 @@ export const DistributionCard = ({ dist }) => {
 
 const CELL = { draf: "bg-slate-300", diajukan: "bg-sky-500", perlu_perbaikan: "bg-amber-500", disetujui: "bg-emerald-600" };
 
-export const StatusGrid = ({ programs, year }) => (
+export const StatusGrid = ({ programs, year, noun }) => (
   <Card data-testid="report-status-grid">
     <div className="mb-1 font-display text-lg font-semibold text-[#12372A]">Status laporan bulanan {year}</div>
     <div className="mb-4 flex flex-wrap gap-3 text-[11px] text-slate-500">
@@ -90,7 +90,7 @@ export const StatusGrid = ({ programs, year }) => (
     </div>
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-xs">
-        <thead><tr><th className="pb-2 text-left font-semibold text-slate-500">SPM</th>{MONTHS.map((m) => <th key={m} className="pb-2 font-medium text-slate-500">{m.slice(0, 3)}</th>)}</tr></thead>
+        <thead><tr><th className="pb-2 text-left font-semibold text-slate-500">{noun}</th>{MONTHS.map((m) => <th key={m} className="pb-2 font-medium text-slate-500">{m.slice(0, 3)}</th>)}</tr></thead>
         <tbody>
           {programs.map((p) => (
             <tr key={p.id}>

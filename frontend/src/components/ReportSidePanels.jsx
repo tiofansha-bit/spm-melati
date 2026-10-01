@@ -96,7 +96,7 @@ export const RevisionList = ({ report }) => {
           {view && (
             <div className="space-y-3 text-sm">
               {view.snapshot.items.map((it) => (
-                <div key={it.indicator_id} className="rounded-lg bg-[#F7FAF7] p-2"><b>{inds[it.indicator_id] || "Program"}</b>: sasaran {fmtNum(it.sasaran) ?? <NA />}, target {fmtNum(it.target, true) ?? <NA />}, capaian {fmtNum(it.capaian) ?? <NA />}</div>
+                <div key={it.indicator_id} className="rounded-lg bg-[#F7FAF7] p-2"><b>{inds[it.indicator_id] || "Indikator"}</b>: sasaran {fmtNum(it.sasaran) ?? <NA />}, target {fmtNum(it.target, true) ?? <NA />}, capaian {fmtNum(it.capaian) ?? <NA />}</div>
               ))}
               {["kendala", "upaya", "hasil_upaya", "rtl", "dukungan"].map((k) => <p key={k}><b className="capitalize">{k.replace("_", " ")}:</b> {view.snapshot[k] || "-"}</p>)}
             </div>

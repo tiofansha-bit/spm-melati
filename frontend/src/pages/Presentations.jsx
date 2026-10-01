@@ -20,7 +20,7 @@ export default function Presentations() {
   const del = async (p) => { if (!window.confirm(`Hapus ${p.title}?`)) return; await api.delete(`/presentations/${p.id}`); load(); };
   return (
     <div>
-      <PageHeader eyebrow="Presentasi otomatis" title="Presentasi SPM" subtitle="Slide capaian, grafik, kendala, upaya, analisis, dan tindak lanjut disusun otomatis dari laporan. Dapat diedit, ditayangkan layar penuh, dan diekspor ke PowerPoint/PDF.">
+      <PageHeader eyebrow="Presentasi otomatis" title="Presentasi SPM & Program" subtitle="Slide capaian, grafik, kendala, upaya, analisis, dan tindak lanjut disusun otomatis dari laporan. Dapat diedit, ditayangkan layar penuh, dan diekspor ke PowerPoint/PDF.">
         <Button className="btn-primary rounded-full" data-testid="generate-presentation-button" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" />Buat presentasi</Button>
       </PageHeader>
       {rows.length === 0 ? <Empty>Belum ada presentasi.</Empty> : (
@@ -45,7 +45,7 @@ export default function Presentations() {
           ))}
         </div>
       )}
-      <GenerateDialog open={open} onOpenChange={setOpen} programs={programs} title="Buat presentasi otomatis" description="Slide disusun otomatis dari data yang dientri PJ SPM pada laporan bulanan (sasaran, target, capaian, kendala, upaya, hasil, RTL, dukungan). Analisis ditandai fakta atau dugaan." withDraft onGenerate={gen} />
+      <GenerateDialog open={open} onOpenChange={setOpen} programs={programs} title="Buat presentasi otomatis" description="Slide disusun otomatis dari data yang dientri PJ pada laporan bulanan (sasaran, target, capaian, kendala, upaya, hasil, RTL, dukungan). Analisis ditandai fakta atau dugaan." withDraft onGenerate={gen} />
     </div>
   );
 }

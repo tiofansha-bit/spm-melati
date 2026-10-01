@@ -25,7 +25,7 @@ export default function UsersPage() {
   const del = async (u) => { if (!window.confirm(`Hapus ${u.name}?`)) return; try { await api.delete(`/users/${u.id}`); load(); } catch (e) { toast.error(errMsg(e)); } };
   return (
     <div>
-      <PageHeader eyebrow="Hak akses" title="Pengguna" subtitle="Admin mengelola aplikasi, PJ mengisi laporan SPM-nya, Kepala Puskesmas memantau dan memberi masukan.">
+      <PageHeader eyebrow="Hak akses" title="Pengguna" subtitle="Admin mengelola aplikasi, PJ mengisi laporan SPM/program-nya, Kepala Puskesmas memantau dan memberi masukan.">
         <Button className="btn-primary rounded-full" data-testid="add-user-button" onClick={() => setF({ role: "pj", active: true })}><Plus className="mr-1 h-4 w-4" />Tambah pengguna</Button>
       </PageHeader>
       <Card className="overflow-x-auto p-0">

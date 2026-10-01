@@ -42,10 +42,10 @@ const ItemsTable = ({ report, items, setItems, editable }) => {
     <TooltipProvider>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
-          <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="py-2 pr-3">Program</th><th className="px-2">Metode</th><th className="px-2 w-28">Sasaran</th><th className="px-2 w-24">Target (%)</th><th className="px-2 w-28">Capaian</th><th className="px-2">%</th><th className="px-2">Keterangan</th></tr></thead>
+          <thead><tr className="text-left text-xs uppercase tracking-wider text-slate-500"><th className="py-2 pr-3">Indikator</th><th className="px-2">Metode</th><th className="px-2 w-28">Sasaran</th><th className="px-2 w-24">Target (%)</th><th className="px-2 w-28">Capaian</th><th className="px-2">%</th><th className="px-2">Keterangan</th></tr></thead>
           <tbody>
             {items.map((it, k) => {
-              const ind = inds[it.indicator_id] || { name: "(program dihapus)" };
+              const ind = inds[it.indicator_id] || { name: "(indikator dihapus)" };
               const pct = it.capaian !== null && it.sasaran ? (it.capaian / it.sasaran) * 100 : null;
               return (
                 <tr key={it.indicator_id} className="border-t border-[#EEF3EF] align-top">
@@ -117,10 +117,10 @@ export default function ReportEditor() {
   const editable = r.can_edit;
   return (
     <div className="space-y-6">
-      <button onClick={() => nav("/laporan")} className="flex items-center gap-1 text-sm text-emerald-700 hover:underline" data-testid="back-to-reports"><ArrowLeft className="h-4 w-4" />Kembali</button>
+      <button onClick={() => nav(r?.program?.kind === "spm" ? "/laporan-spm" : "/laporan-program")} className="flex items-center gap-1 text-sm text-emerald-700 hover:underline" data-testid="back-to-reports"><ArrowLeft className="h-4 w-4" />Kembali</button>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between animate-rise">
         <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Laporan bulanan</div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Laporan bulanan {r.program.kind === "spm" ? "SPM" : "Program"}</div>
           <h1 className="font-display text-3xl font-bold text-[#12372A] sm:text-4xl" data-testid="report-title">{r.program.name} · {MONTHS[r.month - 1]} {r.year}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600"><StatusBadge status={r.status} /><span>PJ: {r.program.pj_name || "-"}</span><span>Tenggat: {fmtDate(r.deadline)}</span></div>
         </div>

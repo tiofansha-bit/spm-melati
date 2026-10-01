@@ -80,23 +80,23 @@ export const PeriodFilter = ({ value, onChange, allowPeriod = true }) => {
   );
 };
 
-export const usePrograms = () => {
+export const usePrograms = (kind) => {
   const [programs, setPrograms] = useState([]);
-  const reload = () => api.get("/programs").then((r) => setPrograms(r.data));
-  useEffect(() => { reload(); }, []);
+  const reload = () => api.get("/programs", { params: { kind: kind || undefined } }).then((r) => setPrograms(r.data));
+  useEffect(() => { reload(); }, [kind]); // eslint-disable-line react-hooks/exhaustive-deps
   return [programs, reload];
 };
 
-export const useMyPrograms = () => {
+export const useMyPrograms = (kind) => {
   const { user } = useAuth();
-  const [programs] = usePrograms();
+  const [programs] = usePrograms(kind);
   return user.role === "pj" ? programs.filter((p) => p.pj_user_id === user.id) : programs;
 };
 
-export const ProgramSelect = ({ programs, value, onChange, allowAll, testid = "program-select" }) => (
-  <SimpleSelect testid={testid} className="w-full sm:w-64" value={value || (allowAll ? "all" : undefined)} placeholder="Pilih SPM"
+export const ProgramSelect = ({ programs, value, onChange, allowAll, testid = "program-select", noun = "SPM/Program" }) => (
+  <SimpleSelect testid={testid} className="w-full sm:w-64" value={value || (allowAll ? "all" : undefined)} placeholder={`Pilih ${noun}`}
     onChange={(v) => onChange(v === "all" ? "" : v)}
-    options={[...(allowAll ? [{ value: "all", label: "Semua SPM" }] : []), ...programs.map((p) => ({ value: p.id, label: p.name }))]} />
+    options={[...(allowAll ? [{ value: "all", label: `Semua ${noun}` }] : []), ...programs.map((p) => ({ value: p.id, label: p.name }))]} />
 );
 
 export const Empty = ({ children, testid = "empty-state" }) => (

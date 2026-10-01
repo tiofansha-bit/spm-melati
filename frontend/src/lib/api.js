@@ -58,7 +58,8 @@ export const RECAP = {
   sasaran_kosong: { label: "Sasaran belum diisi", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   target_kosong: { label: "Target belum ditetapkan", cls: "bg-amber-50 text-amber-700 border-amber-200" },
 };
-export const ROLES = { admin: "Admin", pj: "PJ SPM", kepala: "Kepala Puskesmas" };
+export const TERM = { spm: "SPM", program: "Program" };
+export const ROLES = { admin: "Admin", pj: "PJ", kepala: "Kepala Puskesmas" };
 export const METHODS = {
   kumulatif: { label: "Kumulatif", hint: "Sasaran = sasaran tahunan (dihitung sekali). Capaian = capaian bulan ini saja, bukan akumulasi." },
   rasio: { label: "Rasio periode", hint: "Sasaran & capaian = angka bulan ini. Rekap = jumlah capaian / jumlah sasaran." },

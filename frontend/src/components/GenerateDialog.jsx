@@ -22,9 +22,9 @@ export const GenerateDialog = ({ open, onOpenChange, programs, title, descriptio
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>
         <div className="space-y-4">
-          <Field label="SPM"><ProgramSelect testid="generate-program-select" programs={programs} value={programId} onChange={setProgramId} /></Field>
+          <Field label="SPM / Program"><ProgramSelect testid="generate-program-select" programs={programs} value={programId} onChange={setProgramId} /></Field>
           <Field label="Periode data"><PeriodFilter value={per} onChange={setPer} /></Field>
-          {withProblem && <Field label="Masalah (opsional)" hint="Kosongkan agar sistem memilih program dengan kesenjangan terbesar terhadap target."><Textarea data-testid="generate-problem-input" rows={2} value={masalah} onChange={(e) => setMasalah(e.target.value)} /></Field>}
+          {withProblem && <Field label="Masalah (opsional)" hint="Kosongkan agar sistem memilih indikator dengan kesenjangan terbesar terhadap target."><Textarea data-testid="generate-problem-input" rows={2} value={masalah} onChange={(e) => setMasalah(e.target.value)} /></Field>}
           {withDraft && (
             <label className="flex items-start gap-3 text-sm">
               <Switch data-testid="include-draft-switch" checked={draft} onCheckedChange={setDraft} />
